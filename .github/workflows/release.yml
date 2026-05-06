@@ -14,3 +14,6 @@ jobs:
     uses: Narazaka/vpm-repos/.github/workflows/release.yml@main
     with:
       novcc: false
+      exclude: |
+        Runtime/Benchmark
+        Runtime/Benchmark.meta
