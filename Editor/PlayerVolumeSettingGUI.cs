@@ -25,17 +25,48 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         const float MaxAvatarAudioDistanceFar = 1000000f;
         const float MaxAvatarAudioVolumetricRadius = 1000f;
 
-        // Header(1) + Voice(5) + Spacer(1) + Header(1) + AvatarAudio(5)
-        const int FullLineCount = 13;
+        // Header(1) + Voice(5) + Header(1) + AvatarAudio(5)
+        const int FullLineCount = 12;
         // Header + toggle row + value row, twice
         const int CompactLineCount = 6;
 
-        const float CompactToggleWidth = 90f;
+        const string ModePrefKey = "Narazaka.VRChat.PlayerVolumeManager.InspectorMode";
+        const string FilterMaskPrefKey = "Narazaka.VRChat.PlayerVolumeManager.InspectorFilterMask";
 
-        const string CompactPrefKey = "Narazaka.VRChat.PlayerVolumeManager.CompactInspector";
+        public enum DisplayMode
+        {
+            Full = 0,
+            Compact = 1,
+            Filter = 2,
+        }
 
-        public static bool IsCompact() => EditorPrefs.GetBool(CompactPrefKey, false);
-        public static void SetCompact(bool value) => EditorPrefs.SetBool(CompactPrefKey, value);
+        [System.Flags]
+        public enum FieldFlag
+        {
+            None = 0,
+            VoiceGain = 1 << 0,
+            VoiceDistanceNear = 1 << 1,
+            VoiceDistanceFar = 1 << 2,
+            VoiceVolumetricRadius = 1 << 3,
+            VoiceLowpass = 1 << 4,
+            AvatarAudioGain = 1 << 5,
+            AvatarAudioDistanceNear = 1 << 6,
+            AvatarAudioDistanceFar = 1 << 7,
+            AvatarAudioVolumetricRadius = 1 << 8,
+            AvatarAudioForceSpatial = 1 << 9,
+        }
+
+        const FieldFlag VoiceMask =
+            FieldFlag.VoiceGain | FieldFlag.VoiceDistanceNear | FieldFlag.VoiceDistanceFar
+            | FieldFlag.VoiceVolumetricRadius | FieldFlag.VoiceLowpass;
+        const FieldFlag AvatarMask =
+            FieldFlag.AvatarAudioGain | FieldFlag.AvatarAudioDistanceNear | FieldFlag.AvatarAudioDistanceFar
+            | FieldFlag.AvatarAudioVolumetricRadius | FieldFlag.AvatarAudioForceSpatial;
+
+        public static DisplayMode GetMode() => (DisplayMode)EditorPrefs.GetInt(ModePrefKey, 0);
+        public static void SetMode(DisplayMode value) => EditorPrefs.SetInt(ModePrefKey, (int)value);
+        public static FieldFlag GetFilterMask() => (FieldFlag)EditorPrefs.GetInt(FilterMaskPrefKey, (int)FieldFlag.VoiceGain);
+        public static void SetFilterMask(FieldFlag value) => EditorPrefs.SetInt(FilterMaskPrefKey, (int)value);
 
         public sealed class Properties
         {
@@ -85,15 +116,48 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         public static float GetHeight()
         {
-            var lines = IsCompact() ? CompactLineCount : FullLineCount;
+            int lines;
+            switch (GetMode())
+            {
+                case DisplayMode.Full: lines = FullLineCount; break;
+                case DisplayMode.Compact: lines = CompactLineCount; break;
+                default: lines = GetFilterLineCount(GetFilterMask()); break;
+            }
             return EditorGUIUtility.singleLineHeight * lines
                  + EditorGUIUtility.standardVerticalSpacing * (lines - 1);
         }
 
+        static int GetFilterLineCount(FieldFlag mask)
+        {
+            var voiceCount = CountBits((int)(mask & VoiceMask));
+            var avatarCount = CountBits((int)(mask & AvatarMask));
+            var lines = 0;
+            if (voiceCount > 0) lines += 1 + voiceCount;
+            if (avatarCount > 0) lines += 1 + avatarCount;
+            return lines == 0 ? 1 : lines;
+        }
+
         public static void Draw(Rect rect, Properties p)
         {
-            if (IsCompact()) DrawCompact(rect, p);
-            else DrawFull(rect, p);
+            switch (GetMode())
+            {
+                case DisplayMode.Full: DrawFull(rect, p); break;
+                case DisplayMode.Compact: DrawCompact(rect, p); break;
+                default: DrawFilter(rect, p); break;
+            }
+        }
+
+        static readonly GUIContent ModeLabel = new GUIContent("(Listen Setting Filter)");
+
+        public static void DrawModeDropdownLayout()
+        {
+            var rect = EditorGUILayout.GetControlRect();
+            var dropdownRect = EditorGUI.PrefixLabel(rect, ModeLabel);
+            var content = new GUIContent(GetCurrentModeLabel());
+            if (EditorGUI.DropdownButton(dropdownRect, content, FocusType.Keyboard))
+            {
+                ShowModeMenu(dropdownRect);
+            }
         }
 
         static void DrawFull(Rect rect, Properties p)
@@ -102,13 +166,12 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var step = line + EditorGUIUtility.standardVerticalSpacing;
             var r = new Rect(rect.x, rect.y, rect.width, line);
 
-            DrawHeaderWithCompactToggle(r, "Player Volume"); r.y += step;
+            DrawHeader(r, "Player Volume"); r.y += step;
             DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step;
             DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step;
             DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step;
-            r.y += step;
             DrawHeader(r, "Avatar Audio"); r.y += step;
             DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step;
             DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step;
@@ -125,7 +188,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var sectionHeight = line + spacing + line;
             var r = new Rect(rect.x, rect.y, rect.width, line);
 
-            DrawHeaderWithCompactToggle(r, "Player Volume"); r.y += step;
+            DrawHeader(r, "Player Volume"); r.y += step;
             var voiceCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
             DrawCompactFloat(voiceCols[0], Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain);
             DrawCompactFloat(voiceCols[1], Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear);
@@ -141,6 +204,158 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             DrawCompactFloat(avatarCols[2], Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar);
             DrawCompactFloat(avatarCols[3], Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius);
             DrawCompactBool(avatarCols[4], Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
+        }
+
+        static void DrawFilter(Rect rect, Properties p)
+        {
+            var line = EditorGUIUtility.singleLineHeight;
+            var step = line + EditorGUIUtility.standardVerticalSpacing;
+            var r = new Rect(rect.x, rect.y, rect.width, line);
+            var mask = GetFilterMask();
+            var hasVoice = (mask & VoiceMask) != 0;
+            var hasAvatar = (mask & AvatarMask) != 0;
+
+            if (hasVoice)
+            {
+                DrawHeader(r, "Player Volume"); r.y += step;
+                if ((mask & FieldFlag.VoiceGain) != 0) { DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step; }
+                if ((mask & FieldFlag.VoiceDistanceNear) != 0) { DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step; }
+                if ((mask & FieldFlag.VoiceDistanceFar) != 0) { DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step; }
+                if ((mask & FieldFlag.VoiceVolumetricRadius) != 0) { DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step; }
+                if ((mask & FieldFlag.VoiceLowpass) != 0) { DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step; }
+            }
+            if (hasAvatar)
+            {
+                DrawHeader(r, "Avatar Audio"); r.y += step;
+                if ((mask & FieldFlag.AvatarAudioGain) != 0) { DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioDistanceNear) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioDistanceFar) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioVolumetricRadius) != 0) { DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioForceSpatial) != 0) { DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial); r.y += step; }
+            }
+        }
+
+        static void DrawHeader(Rect rect, string label)
+        {
+            EditorGUI.LabelField(rect, label, EditorStyles.boldLabel);
+        }
+
+        static void ShowModeMenu(Rect rect)
+        {
+            var menu = new GenericMenu();
+            var mode = GetMode();
+            var mask = GetFilterMask();
+            menu.AddItem(new GUIContent("Full"), mode == DisplayMode.Full, () => SetMode(DisplayMode.Full));
+            menu.AddItem(new GUIContent("Compact"), mode == DisplayMode.Compact, () => SetMode(DisplayMode.Compact));
+            menu.AddSeparator("");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceGain, "Player > Gain");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceNear, "Player > Near");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceFar, "Player > Far");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceVolumetricRadius, "Player > Volumetric Radius");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceLowpass, "Player > Lowpass");
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioGain, "Avatar > Gain");
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceNear, "Avatar > Near");
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceFar, "Avatar > Far");
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioVolumetricRadius, "Avatar > Volumetric Radius");
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioForceSpatial, "Avatar > Force Spatial");
+            menu.DropDown(rect);
+        }
+
+        static void AddFieldItem(GenericMenu menu, DisplayMode mode, FieldFlag mask, FieldFlag flag, string label)
+        {
+            var on = mode == DisplayMode.Filter ? (mask & flag) != 0 : false;
+            menu.AddItem(new GUIContent(label), on, () =>
+            {
+                if (mode != DisplayMode.Filter)
+                {
+                    SetFilterMask(flag);
+                    SetMode(DisplayMode.Filter);
+                }
+                else
+                {
+                    var current = GetFilterMask();
+                    var next = (current & flag) != 0 ? current & ~flag : current | flag;
+                    if (next == FieldFlag.None) SetMode(DisplayMode.Full);
+                    else SetFilterMask(next);
+                }
+            });
+        }
+
+        static string GetCurrentModeLabel()
+        {
+            switch (GetMode())
+            {
+                case DisplayMode.Full: return "Full";
+                case DisplayMode.Compact: return "Compact";
+                default:
+                    var mask = GetFilterMask();
+                    var count = CountBits((int)mask);
+                    if (count == 0) return "Filter";
+                    if (count == 1) return GetSingleFieldLabel(mask);
+                    return $"Filter ({count})";
+            }
+        }
+
+        static string GetSingleFieldLabel(FieldFlag flag)
+        {
+            switch (flag)
+            {
+                case FieldFlag.VoiceGain: return "Player > Gain";
+                case FieldFlag.VoiceDistanceNear: return "Player > Near";
+                case FieldFlag.VoiceDistanceFar: return "Player > Far";
+                case FieldFlag.VoiceVolumetricRadius: return "Player > Volumetric Radius";
+                case FieldFlag.VoiceLowpass: return "Player > Lowpass";
+                case FieldFlag.AvatarAudioGain: return "Avatar > Gain";
+                case FieldFlag.AvatarAudioDistanceNear: return "Avatar > Near";
+                case FieldFlag.AvatarAudioDistanceFar: return "Avatar > Far";
+                case FieldFlag.AvatarAudioVolumetricRadius: return "Avatar > Volumetric Radius";
+                case FieldFlag.AvatarAudioForceSpatial: return "Avatar > Force Spatial";
+                default: return "Filter";
+            }
+        }
+
+        static int CountBits(int v)
+        {
+            var c = 0;
+            while (v != 0) { c += v & 1; v >>= 1; }
+            return c;
+        }
+
+        static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
+        {
+            var toggleRect = rect;
+            toggleRect.width = EditorGUIUtility.labelWidth + 20;
+            var valueRect = rect;
+            valueRect.xMin += toggleRect.width;
+
+            using (new EditorGUI.PropertyScope(rect, label, property))
+            {
+                bool effective;
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
+                    if (check.changed) property.floatValue = effective ? defaultValue : -1f;
+                }
+                if (effective) EditorGUI.Slider(valueRect, property, 0f, maxValue, GUIContent.none);
+            }
+        }
+
+        static void DrawBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
+        {
+            var toggleRect = rect;
+            toggleRect.width = EditorGUIUtility.labelWidth + 20;
+            var valueRect = rect;
+            valueRect.xMin += toggleRect.width;
+
+            using (new EditorGUI.PropertyScope(toggleRect, label, enableProperty))
+            {
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    enableProperty.boolValue = EditorGUI.ToggleLeft(toggleRect, label, enableProperty.boolValue);
+                    if (check.changed) property.boolValue = enableProperty.boolValue ? defaultValue : false;
+                }
+            }
+            if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
         }
 
         static void DrawCompactFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
@@ -194,61 +409,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 rects[i] = new Rect(rect.x + width * i, rect.y, width, rect.height);
             }
             return rects;
-        }
-
-        static void DrawHeader(Rect rect, string label)
-        {
-            EditorGUI.LabelField(rect, label, EditorStyles.boldLabel);
-        }
-
-        static void DrawHeaderWithCompactToggle(Rect rect, string label)
-        {
-            var labelRect = rect; labelRect.width -= CompactToggleWidth;
-            EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
-
-            var toggleRect = rect; toggleRect.xMin = rect.xMax - CompactToggleWidth;
-            using (var check = new EditorGUI.ChangeCheckScope())
-            {
-                var compact = EditorGUI.ToggleLeft(toggleRect, "Compact", IsCompact());
-                if (check.changed) SetCompact(compact);
-            }
-        }
-
-        static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
-        {
-            var toggleRect = rect;
-            toggleRect.width = EditorGUIUtility.labelWidth + 20;
-            var valueRect = rect;
-            valueRect.xMin += toggleRect.width;
-
-            using (new EditorGUI.PropertyScope(rect, label, property))
-            {
-                bool effective;
-                using (var check = new EditorGUI.ChangeCheckScope())
-                {
-                    effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
-                    if (check.changed) property.floatValue = effective ? defaultValue : -1f;
-                }
-                if (effective) EditorGUI.Slider(valueRect, property, 0f, maxValue, GUIContent.none);
-            }
-        }
-
-        static void DrawBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
-        {
-            var toggleRect = rect;
-            toggleRect.width = EditorGUIUtility.labelWidth + 20;
-            var valueRect = rect;
-            valueRect.xMin += toggleRect.width;
-
-            using (new EditorGUI.PropertyScope(toggleRect, label, enableProperty))
-            {
-                using (var check = new EditorGUI.ChangeCheckScope())
-                {
-                    enableProperty.boolValue = EditorGUI.ToggleLeft(toggleRect, label, enableProperty.boolValue);
-                    if (check.changed) property.boolValue = enableProperty.boolValue ? defaultValue : false;
-                }
-            }
-            if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
         }
     }
 }

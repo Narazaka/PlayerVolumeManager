@@ -30,12 +30,14 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             DrawMisc();
             if (_matchWhenListener.boolValue)
             {
+                PlayerVolumeSettingGUI.DrawModeDropdownLayout();
+
                 DrawOverrides();
 
                 DrawHeader("Listen Default");
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    base.Draw();
+                    base.DrawVolumeSetting();
                 }
             }
         }
