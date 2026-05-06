@@ -23,6 +23,8 @@ https://github.com/Narazaka/PlayerVolumeManager/releases/latest から `net.nara
 
 ## Changelog
 
+- 1.0.0-alpha.0: リリース
+
 ## License
 
 [Zlib License](LICENSE.txt)
