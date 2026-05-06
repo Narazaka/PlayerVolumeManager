@@ -8,20 +8,29 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 {
     public abstract class PlayerVolumeGroup : PlayerVolumeSetting
     {
+        [Tooltip("リスナーとしての判定時に考慮される（ローカルでの処理時に考慮される）")]
+        public bool _matchWhenListener = true;
+        [Tooltip("スピーカーとしての判定時に考慮される（リモートでの処理時に考慮される）")]
+        public bool _matchWhenSpeaker = true;
+        [Tooltip("このグループでオーバーライドされない項目を、Managerではなく次のグループにまかせる")]
         public bool _fallbackToNextGroup;
         [InlinePlayerVolumeSettingByGroup]
-        public PlayerVolumeSettingByGroup[] _overrides = new PlayerVolumeSettingByGroup[0];
+        public PlayerVolumeSettingByGroup[] _listenOverrides = new PlayerVolumeSettingByGroup[0];
         PlayerVolumeGroup[] froms;
 
-        public abstract bool _ContainsPlayer(VRCPlayerApi player);
+        public virtual bool _ContainsPlayer(VRCPlayerApi player)
+        {
+            var local = player.isLocal;
+            return (local && _matchWhenListener) || (!local && _matchWhenSpeaker);
+        }
 
         protected virtual void OnEnable()
         {
-            var len = _overrides.Length;
+            var len = _listenOverrides.Length;
             froms = new PlayerVolumeGroup[len];
             for (var i = 0; i < len; i++)
             {
-                froms[i] = _overrides[i] == null ? null : _overrides[i]._from;
+                froms[i] = _listenOverrides[i] == null ? null : _listenOverrides[i]._from;
             }
         }
 
@@ -37,7 +46,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
             for (var i = 0; i < len; i++)
             {
                 var settingIndex = Array.IndexOf(froms, fromGroups[i]);
-                settings[i] = settingIndex == -1 ? (PlayerVolumeSetting)this : (PlayerVolumeSetting)_overrides[settingIndex];
+                settings[i] = settingIndex == -1 ? (PlayerVolumeSetting)this : (PlayerVolumeSetting)_listenOverrides[settingIndex];
             }
             settings[len] = this;
             settings[len + 1] = parent;

@@ -8,27 +8,35 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
     [CustomEditor(typeof(PlayerVolumeGroup), true)]
     public class PlayerVolumeGroupEditor : PlayerVolumeSettingEditor
     {
-        const string OverridesParentName = "Overrides";
+        const string ListenOverridesParentName = "ListenOverrides";
 
+        SerializedProperty _matchWhenListener;
+        SerializedProperty _matchWhenSpeaker;
         SerializedProperty _fallbackToNextGroup;
-        SerializedProperty _overrides;
+        SerializedProperty _listenOverrides;
 
         protected override void OnEnable()
         {
             base.OnEnable();
-            _overrides = serializedObject.FindProperty(nameof(PlayerVolumeGroup._overrides));
+            _matchWhenListener = serializedObject.FindProperty(nameof(PlayerVolumeGroup._matchWhenListener));
+            _matchWhenSpeaker = serializedObject.FindProperty(nameof(PlayerVolumeGroup._matchWhenSpeaker));
+            _listenOverrides = serializedObject.FindProperty(nameof(PlayerVolumeGroup._listenOverrides));
             _fallbackToNextGroup = serializedObject.FindProperty(nameof(PlayerVolumeGroup._fallbackToNextGroup));
         }
 
         public override void Draw()
         {
-            DrawFallbackToNextGroup();
-            DrawOverrides();
 
-            DrawHeader("Default Setting");
-            using (new EditorGUI.IndentLevelScope())
+            DrawMisc();
+            if (_matchWhenListener.boolValue)
             {
-                base.Draw();
+                DrawOverrides();
+
+                DrawHeader("Listen Default");
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    base.Draw();
+                }
             }
         }
 
@@ -39,8 +47,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 if (_knownProperties == null)
                 {
                     _knownProperties = new HashSet<string>(base.KnownProperties);
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._matchWhenListener));
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._matchWhenSpeaker));
                     _knownProperties.Add(nameof(PlayerVolumeGroup._fallbackToNextGroup));
-                    _knownProperties.Add(nameof(PlayerVolumeGroup._overrides));
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._listenOverrides));
                 }
                 return _knownProperties;
             }
@@ -48,14 +58,16 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         static HashSet<string> _knownProperties = null;
 
-        void DrawFallbackToNextGroup()
+        void DrawMisc()
         {
+            EditorGUILayout.PropertyField(_matchWhenListener);
+            EditorGUILayout.PropertyField(_matchWhenSpeaker);
             EditorGUILayout.PropertyField(_fallbackToNextGroup);
         }
 
         void DrawOverrides()
         {
-            EditorGUILayout.PropertyField(_overrides, true);
+            EditorGUILayout.PropertyField(_listenOverrides, true);
             if (GUILayout.Button("Fill Overrides"))
             {
                 FillOverrides();
@@ -70,9 +82,9 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var existingGroups = new HashSet<PlayerVolumeGroup>();
             var noGroupSettings = new List<int>();
             var noGroupSettingExists = false;
-            for (var i = 0; i < _overrides.arraySize; i++)
+            for (var i = 0; i < _listenOverrides.arraySize; i++)
             {
-                var s = _overrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup;
+                var s = _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup;
                 if (s != null)
                 {
                     if (s._from != null)
@@ -111,8 +123,8 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             noGroupSettings.Reverse();
             foreach (var index in noGroupSettings)
             {
-                var s = _overrides.GetArrayElementAtIndex(index).objectReferenceValue as PlayerVolumeSettingByGroup;
-                _overrides.DeleteArrayElementAtIndex(index);
+                var s = _listenOverrides.GetArrayElementAtIndex(index).objectReferenceValue as PlayerVolumeSettingByGroup;
+                _listenOverrides.DeleteArrayElementAtIndex(index);
                 if (s != null && destroySettingObjects)
                 {
                     Undo.DestroyObjectImmediate(s.gameObject);
@@ -128,25 +140,25 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 {
                     setting = CreateSetting(group);
                 }
-                _overrides.InsertArrayElementAtIndex(_overrides.arraySize);
-                _overrides.GetArrayElementAtIndex(_overrides.arraySize - 1).objectReferenceValue = setting;
+                _listenOverrides.InsertArrayElementAtIndex(_listenOverrides.arraySize);
+                _listenOverrides.GetArrayElementAtIndex(_listenOverrides.arraySize - 1).objectReferenceValue = setting;
             }
         }
 
         PlayerVolumeSettingByGroup CreateSetting(PlayerVolumeGroup group)
         {
             var root = (target as PlayerVolumeGroup).transform;
-            var parent = root.Find(OverridesParentName);
+            var parent = root.Find(ListenOverridesParentName);
             if (parent == null)
             {
-                parent = new GameObject(OverridesParentName).transform;
+                parent = new GameObject(ListenOverridesParentName).transform;
                 parent.SetParent(root, false);
-                Undo.RegisterCreatedObjectUndo(parent.gameObject, "Create Overrides Parent");
+                Undo.RegisterCreatedObjectUndo(parent.gameObject, "Create Listen Overrides Parent");
             }
             var setting = new GameObject(group.name).AddComponent<PlayerVolumeSettingByGroup>();
             setting._from = group;
             setting.transform.SetParent(parent, false);
-            Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Setting");
+            Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Listen Override Setting");
             return setting;
         }
     }

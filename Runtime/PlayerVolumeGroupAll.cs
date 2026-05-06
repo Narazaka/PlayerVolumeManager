@@ -9,9 +9,5 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class PlayerVolumeGroupAll : PlayerVolumeGroup
     {
-        public override bool _ContainsPlayer(VRCPlayerApi player)
-        {
-            return true;
-        }
     }
 }

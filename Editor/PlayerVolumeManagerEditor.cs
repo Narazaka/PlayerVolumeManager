@@ -21,7 +21,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         {
             DrawGroups();
             DrawDebugLog();
-            DrawHeader("Default Setting");
+            DrawHeader("Listen Default");
             using (new EditorGUI.IndentLevelScope())
             {
                 base.Draw();

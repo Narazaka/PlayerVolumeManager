@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3380639765252209335}
   m_Layer: 0
-  m_Name: Overrides
+  m_Name: ListenOverrides
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 2628004200248051805}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.6052808, y: 3.2866793, z: 3.5526233}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -99,9 +99,10 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _matchAsOnlySpeaker: 0
+  _matchWhenListener: 1
+  _matchWhenSpeaker: 1
   _fallbackToNextGroup: 0
-  _overrides: []
+  _listenOverrides: []
 --- !u!114 &9158232154914448284
 MonoBehaviour:
   m_ObjectHideFlags: 0

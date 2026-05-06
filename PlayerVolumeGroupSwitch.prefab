@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3110788545124329527}
   m_Layer: 0
-  m_Name: Overrides
+  m_Name: ListenOverrides
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -99,8 +99,10 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
+  _matchWhenListener: 1
+  _matchWhenSpeaker: 1
   _fallbackToNextGroup: 0
-  _overrides: []
+  _listenOverrides: []
   _assignWhenInteract: 0
   _unassignWhenInteract: 0
   _assignWhenPickup: 0

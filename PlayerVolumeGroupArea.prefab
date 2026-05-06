@@ -42,7 +42,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7719785784943218793}
   m_Layer: 0
-  m_Name: Overrides
+  m_Name: ListenOverrides
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -132,10 +132,14 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _overrides: []
+  _matchWhenListener: 1
+  _matchWhenSpeaker: 1
+  _fallbackToNextGroup: 0
+  _listenOverrides: []
   _targets:
   - {fileID: 554451021091741540}
   _isStatic: 1
+  _debugLog: 0
 --- !u!114 &5557193458299926091
 MonoBehaviour:
   m_ObjectHideFlags: 0

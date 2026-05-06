@@ -29,6 +29,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         public override bool _ContainsPlayer(VRCPlayerApi player)
         {
+            if (!base._ContainsPlayer(player)) return false;
             var playerPosition = player.GetPosition();
             return _isStatic ? ContainsPlayerStatic(playerPosition) : ContainsPlayerDynamic(playerPosition);
         }

@@ -27,7 +27,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         public override bool _ContainsPlayer(VRCPlayerApi player)
         {
-            return _assignedPlayerId == player.playerId;
+            return base._ContainsPlayer(player) && _assignedPlayerId == player.playerId;
         }
 
         [PublicAPI]
