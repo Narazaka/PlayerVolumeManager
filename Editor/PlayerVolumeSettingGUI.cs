@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -70,6 +71,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         public sealed class Properties
         {
+            public Properties Fallback;
             public SerializedProperty VoiceGain;
             public SerializedProperty VoiceDistanceNear;
             public SerializedProperty VoiceDistanceFar;
@@ -112,6 +114,44 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             public static GUIContent AvatarAudioDistanceFar = new GUIContent("Far");
             public static GUIContent AvatarAudioVolumetricRadius = new GUIContent("Volumetric Radius");
             public static GUIContent AvatarAudioForceSpatial = new GUIContent("Force Spatial");
+        }
+
+        // Static getters used to walk the fallback chain without per-call lambda allocations.
+        static readonly Func<Properties, SerializedProperty> GetVoiceGain = p => p.VoiceGain;
+        static readonly Func<Properties, SerializedProperty> GetVoiceDistanceNear = p => p.VoiceDistanceNear;
+        static readonly Func<Properties, SerializedProperty> GetVoiceDistanceFar = p => p.VoiceDistanceFar;
+        static readonly Func<Properties, SerializedProperty> GetVoiceVolumetricRadius = p => p.VoiceVolumetricRadius;
+        static readonly Func<Properties, SerializedProperty> GetEnableVoiceLowpass = p => p.EnableVoiceLowpass;
+        static readonly Func<Properties, SerializedProperty> GetVoiceLowpass = p => p.VoiceLowpass;
+        static readonly Func<Properties, SerializedProperty> GetAvatarAudioGain = p => p.AvatarAudioGain;
+        static readonly Func<Properties, SerializedProperty> GetAvatarAudioDistanceNear = p => p.AvatarAudioDistanceNear;
+        static readonly Func<Properties, SerializedProperty> GetAvatarAudioDistanceFar = p => p.AvatarAudioDistanceFar;
+        static readonly Func<Properties, SerializedProperty> GetAvatarAudioVolumetricRadius = p => p.AvatarAudioVolumetricRadius;
+        static readonly Func<Properties, SerializedProperty> GetEnableAvatarAudioForceSpatial = p => p.EnableAvatarAudioForceSpatial;
+        static readonly Func<Properties, SerializedProperty> GetAvatarAudioForceSpatial = p => p.AvatarAudioForceSpatial;
+
+        static float? ResolveFloat(Properties p, Func<Properties, SerializedProperty> getter)
+        {
+            while (p != null)
+            {
+                var prop = getter(p);
+                if (prop != null && prop.floatValue >= 0f) return prop.floatValue;
+                p = p.Fallback;
+            }
+            return null;
+        }
+
+        static bool? ResolveBool(Properties p,
+            Func<Properties, SerializedProperty> enableGetter,
+            Func<Properties, SerializedProperty> valueGetter)
+        {
+            while (p != null)
+            {
+                var enableProp = enableGetter(p);
+                if (enableProp != null && enableProp.boolValue) return valueGetter(p).boolValue;
+                p = p.Fallback;
+            }
+            return null;
         }
 
         public static float GetHeight()
@@ -165,19 +205,20 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var line = EditorGUIUtility.singleLineHeight;
             var step = line + EditorGUIUtility.standardVerticalSpacing;
             var r = new Rect(rect.x, rect.y, rect.width, line);
+            var fb = p.Fallback;
 
             DrawHeader(r, "Player Volume"); r.y += step;
-            DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step;
-            DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step;
-            DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step;
-            DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step;
-            DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step;
+            DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain)); r.y += step;
+            DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear)); r.y += step;
+            DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar, ResolveFloat(fb, GetVoiceDistanceFar)); r.y += step;
+            DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius, ResolveFloat(fb, GetVoiceVolumetricRadius)); r.y += step;
+            DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass, ResolveBool(fb, GetEnableVoiceLowpass, GetVoiceLowpass)); r.y += step;
             DrawHeader(r, "Avatar Audio"); r.y += step;
-            DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step;
-            DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step;
-            DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step;
-            DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius); r.y += step;
-            DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
+            DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain)); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear)); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar, ResolveFloat(fb, GetAvatarAudioDistanceFar)); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius, ResolveFloat(fb, GetAvatarAudioVolumetricRadius)); r.y += step;
+            DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial, ResolveBool(fb, GetEnableAvatarAudioForceSpatial, GetAvatarAudioForceSpatial));
         }
 
         static void DrawCompact(Rect rect, Properties p)
@@ -187,23 +228,24 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var step = line + spacing;
             var sectionHeight = line + spacing + line;
             var r = new Rect(rect.x, rect.y, rect.width, line);
+            var fb = p.Fallback;
 
             DrawHeader(r, "Player Volume"); r.y += step;
             var voiceCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
-            DrawCompactFloat(voiceCols[0], Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain);
-            DrawCompactFloat(voiceCols[1], Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear);
-            DrawCompactFloat(voiceCols[2], Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar);
-            DrawCompactFloat(voiceCols[3], Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius);
-            DrawCompactBool(voiceCols[4], Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass);
+            DrawCompactFloat(voiceCols[0], Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain));
+            DrawCompactFloat(voiceCols[1], Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear));
+            DrawCompactFloat(voiceCols[2], Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar, ResolveFloat(fb, GetVoiceDistanceFar));
+            DrawCompactFloat(voiceCols[3], Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius, ResolveFloat(fb, GetVoiceVolumetricRadius));
+            DrawCompactBool(voiceCols[4], Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass, ResolveBool(fb, GetEnableVoiceLowpass, GetVoiceLowpass));
             r.y += sectionHeight + spacing;
 
             DrawHeader(r, "Avatar Audio"); r.y += step;
             var avatarCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
-            DrawCompactFloat(avatarCols[0], Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain);
-            DrawCompactFloat(avatarCols[1], Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear);
-            DrawCompactFloat(avatarCols[2], Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar);
-            DrawCompactFloat(avatarCols[3], Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius);
-            DrawCompactBool(avatarCols[4], Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
+            DrawCompactFloat(avatarCols[0], Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain));
+            DrawCompactFloat(avatarCols[1], Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear));
+            DrawCompactFloat(avatarCols[2], Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar, ResolveFloat(fb, GetAvatarAudioDistanceFar));
+            DrawCompactFloat(avatarCols[3], Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius, ResolveFloat(fb, GetAvatarAudioVolumetricRadius));
+            DrawCompactBool(avatarCols[4], Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial, ResolveBool(fb, GetEnableAvatarAudioForceSpatial, GetAvatarAudioForceSpatial));
         }
 
         static void DrawFilter(Rect rect, Properties p)
@@ -214,24 +256,25 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var mask = GetFilterMask();
             var hasVoice = (mask & VoiceMask) != 0;
             var hasAvatar = (mask & AvatarMask) != 0;
+            var fb = p.Fallback;
 
             if (hasVoice)
             {
                 DrawHeader(r, "Player Volume"); r.y += step;
-                if ((mask & FieldFlag.VoiceGain) != 0) { DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step; }
-                if ((mask & FieldFlag.VoiceDistanceNear) != 0) { DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step; }
-                if ((mask & FieldFlag.VoiceDistanceFar) != 0) { DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step; }
-                if ((mask & FieldFlag.VoiceVolumetricRadius) != 0) { DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step; }
-                if ((mask & FieldFlag.VoiceLowpass) != 0) { DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step; }
+                if ((mask & FieldFlag.VoiceGain) != 0) { DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain)); r.y += step; }
+                if ((mask & FieldFlag.VoiceDistanceNear) != 0) { DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear)); r.y += step; }
+                if ((mask & FieldFlag.VoiceDistanceFar) != 0) { DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar, ResolveFloat(fb, GetVoiceDistanceFar)); r.y += step; }
+                if ((mask & FieldFlag.VoiceVolumetricRadius) != 0) { DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius, ResolveFloat(fb, GetVoiceVolumetricRadius)); r.y += step; }
+                if ((mask & FieldFlag.VoiceLowpass) != 0) { DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass, ResolveBool(fb, GetEnableVoiceLowpass, GetVoiceLowpass)); r.y += step; }
             }
             if (hasAvatar)
             {
                 DrawHeader(r, "Avatar Audio"); r.y += step;
-                if ((mask & FieldFlag.AvatarAudioGain) != 0) { DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step; }
-                if ((mask & FieldFlag.AvatarAudioDistanceNear) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step; }
-                if ((mask & FieldFlag.AvatarAudioDistanceFar) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step; }
-                if ((mask & FieldFlag.AvatarAudioVolumetricRadius) != 0) { DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius); r.y += step; }
-                if ((mask & FieldFlag.AvatarAudioForceSpatial) != 0) { DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioGain) != 0) { DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain)); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioDistanceNear) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear)); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioDistanceFar) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar, ResolveFloat(fb, GetAvatarAudioDistanceFar)); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioVolumetricRadius) != 0) { DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius, ResolveFloat(fb, GetAvatarAudioVolumetricRadius)); r.y += step; }
+                if ((mask & FieldFlag.AvatarAudioForceSpatial) != 0) { DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial, ResolveBool(fb, GetEnableAvatarAudioForceSpatial, GetAvatarAudioForceSpatial)); r.y += step; }
             }
         }
 
@@ -321,7 +364,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             return c;
         }
 
-        static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
+        static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue, float? fallbackValue)
         {
             var toggleRect = rect;
             toggleRect.width = EditorGUIUtility.labelWidth + 20;
@@ -337,10 +380,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     if (check.changed) property.floatValue = effective ? defaultValue : -1f;
                 }
                 if (effective) EditorGUI.Slider(valueRect, property, 0f, maxValue, GUIContent.none);
+                else if (fallbackValue.HasValue) DrawFallbackFloat(valueRect, fallbackValue.Value, maxValue);
             }
         }
 
-        static void DrawBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
+        static void DrawBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue, bool? fallbackValue)
         {
             var toggleRect = rect;
             toggleRect.width = EditorGUIUtility.labelWidth + 20;
@@ -356,9 +400,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 }
             }
             if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
+            else if (fallbackValue.HasValue) DrawFallbackBool(valueRect, fallbackValue.Value);
         }
 
-        static void DrawCompactFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
+        static void DrawCompactFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue, float? fallbackValue)
         {
             var line = EditorGUIUtility.singleLineHeight;
             var step = line + EditorGUIUtility.standardVerticalSpacing;
@@ -373,16 +418,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
                     if (check.changed) property.floatValue = effective ? defaultValue : -1f;
                 }
-                if (!effective) return;
-                using (var check = new EditorGUI.ChangeCheckScope())
+                if (effective)
                 {
-                    var v = EditorGUI.FloatField(valueRect, property.floatValue);
-                    if (check.changed) property.floatValue = Mathf.Clamp(v, 0f, maxValue);
+                    using (var check = new EditorGUI.ChangeCheckScope())
+                    {
+                        var v = EditorGUI.FloatField(valueRect, property.floatValue);
+                        if (check.changed) property.floatValue = Mathf.Clamp(v, 0f, maxValue);
+                    }
                 }
+                else if (fallbackValue.HasValue) DrawFallbackFloatCompact(valueRect, fallbackValue.Value);
             }
         }
 
-        static void DrawCompactBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
+        static void DrawCompactBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue, bool? fallbackValue)
         {
             var line = EditorGUIUtility.singleLineHeight;
             var step = line + EditorGUIUtility.standardVerticalSpacing;
@@ -398,6 +446,31 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 }
             }
             if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
+            else if (fallbackValue.HasValue) DrawFallbackBool(valueRect, fallbackValue.Value);
+        }
+
+        static void DrawFallbackFloat(Rect valueRect, float value, float maxValue)
+        {
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUI.Slider(valueRect, value, 0f, maxValue);
+            }
+        }
+
+        static void DrawFallbackFloatCompact(Rect valueRect, float value)
+        {
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUI.FloatField(valueRect, value);
+            }
+        }
+
+        static void DrawFallbackBool(Rect valueRect, bool value)
+        {
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUI.Toggle(valueRect, value);
+            }
         }
 
         static Rect[] SplitHorizontal(Rect rect, int columns)

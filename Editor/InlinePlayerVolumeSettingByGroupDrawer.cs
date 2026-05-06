@@ -14,7 +14,15 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             public PlayerVolumeSettingGUI.Properties Properties;
         }
 
+        sealed class ManagerEntry
+        {
+            public PlayerVolumeManager Manager;
+            public SerializedObject SerializedObject;
+            public PlayerVolumeSettingGUI.Properties Properties;
+        }
+
         static readonly Dictionary<int, Entry> _cache = new Dictionary<int, Entry>();
+        static ManagerEntry _managerEntry;
 
         static GUIContent FoldoutLabel(PlayerVolumeSettingByGroup target, SerializedProperty property, GUIContent fallback)
         {
@@ -44,6 +52,29 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             };
             _cache[id] = entry;
             return entry;
+        }
+
+        static PlayerVolumeSettingGUI.Properties GetManagerFallbackProperties()
+        {
+            if (_managerEntry == null || _managerEntry.Manager == null)
+            {
+                var found = Object.FindObjectsByType<PlayerVolumeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                if (found.Length == 0)
+                {
+                    _managerEntry = null;
+                    return null;
+                }
+                var manager = found[0];
+                var so = new SerializedObject(manager);
+                _managerEntry = new ManagerEntry
+                {
+                    Manager = manager,
+                    SerializedObject = so,
+                    Properties = PlayerVolumeSettingGUI.Properties.Create(so),
+                };
+            }
+            _managerEntry.SerializedObject.UpdateIfRequiredOrScript();
+            return _managerEntry.Properties;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -98,6 +129,12 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     var groupRect = new Rect(position.x, position.y + line + spacing, position.width, line);
                     EditorGUI.PropertyField(groupRect, entry.Group);
 
+                    // fallback: parent (PlayerVolumeGroup)
+                    var groupProperties = PlayerVolumeSettingGUI.Properties.Create(property.serializedObject);
+                    // fallback.fallback: parent/parent (PlayerVolumeManager)
+                    groupProperties.Fallback = GetManagerFallbackProperties();
+                    entry.Properties.Fallback = groupProperties;
+
                     var bodyRect = new Rect(
                         position.x,
                         groupRect.yMax + spacing,
@@ -106,6 +143,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     PlayerVolumeSettingGUI.Draw(bodyRect, entry.Properties);
 
                     entry.SerializedObject.ApplyModifiedProperties();
+                    entry.Properties.Fallback = null;
                 }
             }
         }
