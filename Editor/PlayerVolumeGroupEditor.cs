@@ -42,6 +42,9 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
+        private protected override PlayerVolumeSettingGUI.Properties BuildFallback() =>
+            PlayerVolumeSettingGUI.GetManagerFallbackProperties();
+
         protected override HashSet<string> KnownProperties
         {
             get

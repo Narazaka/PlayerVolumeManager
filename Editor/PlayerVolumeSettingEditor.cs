@@ -48,9 +48,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         protected void DrawVolumeSetting()
         {
-            var rect = EditorGUILayout.GetControlRect(false, PlayerVolumeSettingGUI.GetHeight());
-            PlayerVolumeSettingGUI.Draw(rect, _properties);
+            _properties.Fallback = BuildFallback();
+            try
+            {
+                var rect = EditorGUILayout.GetControlRect(false, PlayerVolumeSettingGUI.GetHeight());
+                PlayerVolumeSettingGUI.Draw(rect, _properties);
+            }
+            finally
+            {
+                _properties.Fallback = null;
+            }
         }
+
+        private protected virtual PlayerVolumeSettingGUI.Properties BuildFallback() => null;
 
         protected virtual HashSet<string> KnownProperties => _knownProperties;
 

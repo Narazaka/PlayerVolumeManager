@@ -64,6 +64,38 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             FieldFlag.AvatarAudioGain | FieldFlag.AvatarAudioDistanceNear | FieldFlag.AvatarAudioDistanceFar
             | FieldFlag.AvatarAudioVolumetricRadius | FieldFlag.AvatarAudioForceSpatial;
 
+        sealed class ManagerEntry
+        {
+            public PlayerVolumeManager Manager;
+            public SerializedObject SerializedObject;
+            public Properties Properties;
+        }
+
+        static ManagerEntry _managerEntry;
+
+        public static Properties GetManagerFallbackProperties()
+        {
+            if (_managerEntry == null || _managerEntry.Manager == null)
+            {
+                var found = UnityEngine.Object.FindObjectsByType<PlayerVolumeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                if (found.Length == 0)
+                {
+                    _managerEntry = null;
+                    return null;
+                }
+                var manager = found[0];
+                var so = new SerializedObject(manager);
+                _managerEntry = new ManagerEntry
+                {
+                    Manager = manager,
+                    SerializedObject = so,
+                    Properties = Properties.Create(so),
+                };
+            }
+            _managerEntry.SerializedObject.UpdateIfRequiredOrScript();
+            return _managerEntry.Properties;
+        }
+
         public static DisplayMode GetMode() => (DisplayMode)EditorPrefs.GetInt(ModePrefKey, 0);
         public static void SetMode(DisplayMode value) => EditorPrefs.SetInt(ModePrefKey, (int)value);
         public static FieldFlag GetFilterMask() => (FieldFlag)EditorPrefs.GetInt(FilterMaskPrefKey, (int)FieldFlag.VoiceGain);
