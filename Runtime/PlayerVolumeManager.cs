@@ -18,7 +18,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         void Update()
         {
-            var player = selfGroup == null ? Networking.LocalPlayer : players[playerIndex];
+            var player = selfGroup == null ? Networking.LocalPlayer : players[Time.frameCount % players.Length];
             if (Utilities.IsValid(player))
             {
                 ProcessPlayer(player);
@@ -109,14 +109,14 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         public override void OnPlayerJoined(VRCPlayerApi player)
         {
-            players = VRCPlayerApi.GetPlayers(players);
+            players = VRCPlayerApi.GetPlayers();
 
             ApplySuitableVolumes(player);
         }
 
         public override void OnPlayerLeft(VRCPlayerApi player)
         {
-            var newPlayers = VRCPlayerApi.GetPlayers(players);
+            var newPlayers = VRCPlayerApi.GetPlayers();
             var len = newPlayers.Length - 1;
             players = new VRCPlayerApi[len];
             var index = Array.IndexOf(newPlayers, player);
