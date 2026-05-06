@@ -409,7 +409,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 using (var check = new EditorGUI.ChangeCheckScope())
                 {
                     effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
-                    if (check.changed) property.floatValue = effective ? defaultValue : -1f;
+                    if (check.changed) property.floatValue = effective ? (fallbackValue ?? defaultValue) : -1f;
                 }
                 if (effective) EditorGUI.Slider(valueRect, property, 0f, maxValue, GUIContent.none);
                 else if (fallbackValue.HasValue) DrawFallbackFloat(valueRect, fallbackValue.Value, maxValue);
@@ -428,7 +428,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 using (var check = new EditorGUI.ChangeCheckScope())
                 {
                     enableProperty.boolValue = EditorGUI.ToggleLeft(toggleRect, label, enableProperty.boolValue);
-                    if (check.changed) property.boolValue = enableProperty.boolValue ? defaultValue : false;
+                    if (check.changed) property.boolValue = enableProperty.boolValue ? (fallbackValue ?? defaultValue) : false;
                 }
             }
             if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
@@ -448,7 +448,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 using (var check = new EditorGUI.ChangeCheckScope())
                 {
                     effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
-                    if (check.changed) property.floatValue = effective ? defaultValue : -1f;
+                    if (check.changed) property.floatValue = effective ? (fallbackValue ?? defaultValue) : -1f;
                 }
                 if (effective)
                 {
@@ -474,7 +474,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 using (var check = new EditorGUI.ChangeCheckScope())
                 {
                     enableProperty.boolValue = EditorGUI.ToggleLeft(toggleRect, label, enableProperty.boolValue);
-                    if (check.changed) property.boolValue = enableProperty.boolValue ? defaultValue : false;
+                    if (check.changed) property.boolValue = enableProperty.boolValue ? (fallbackValue ?? defaultValue) : false;
                 }
             }
             if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
