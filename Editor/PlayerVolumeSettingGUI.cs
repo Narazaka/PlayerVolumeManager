@@ -60,6 +60,20 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             };
         }
 
+        sealed class Labels
+        {
+            public static GUIContent VoiceGain = new GUIContent("Gain");
+            public static GUIContent VoiceDistanceNear = new GUIContent("Near");
+            public static GUIContent VoiceDistanceFar = new GUIContent("Far");
+            public static GUIContent VoiceVolumetricRadius = new GUIContent("Volumetric Radius");
+            public static GUIContent VoiceLowPass = new GUIContent("Lowpass");
+            public static GUIContent AvatarAudioGain = new GUIContent("Gain");
+            public static GUIContent AvatarAudioDistanceNear = new GUIContent("Near");
+            public static GUIContent AvatarAudioDistanceFar = new GUIContent("Far");
+            public static GUIContent AvatarAudioVolumetricRadius = new GUIContent("Volumetric Radius");
+            public static GUIContent AvatarAudioForceSpatial = new GUIContent("Force Spatial");
+        }
+
         public static float GetHeight()
         {
             return EditorGUIUtility.singleLineHeight * LineCount
@@ -73,18 +87,18 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var r = new Rect(rect.x, rect.y, rect.width, line);
 
             DrawHeader(r, "Player Volume Settings"); r.y += step;
-            DrawFloat(r, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step;
-            DrawFloat(r, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step;
-            DrawFloat(r, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step;
-            DrawFloat(r, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step;
-            DrawBool(r, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step;
+            DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step;
+            DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step;
+            DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step;
+            DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step;
+            DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step;
             r.y += step;
             DrawHeader(r, "Avatar Audio Settings"); r.y += step;
-            DrawFloat(r, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step;
-            DrawFloat(r, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step;
-            DrawFloat(r, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step;
-            DrawFloat(r, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius); r.y += step;
-            DrawBool(r, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
+            DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step;
+            DrawFloat(r, Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius); r.y += step;
+            DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
         }
 
         static void DrawHeader(Rect rect, string label)
@@ -92,14 +106,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             EditorGUI.LabelField(rect, label, EditorStyles.boldLabel);
         }
 
-        static void DrawFloat(Rect rect, SerializedProperty property, float defaultValue, float maxValue)
+        static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
         {
             var toggleRect = rect;
             toggleRect.width = EditorGUIUtility.labelWidth + 20;
             var valueRect = rect;
             valueRect.xMin += toggleRect.width;
 
-            var label = new GUIContent(property.displayName, property.tooltip);
             using (new EditorGUI.PropertyScope(rect, label, property))
             {
                 bool effective;
@@ -112,14 +125,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
-        static void DrawBool(Rect rect, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
+        static void DrawBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
         {
             var toggleRect = rect;
             toggleRect.width = EditorGUIUtility.labelWidth + 20;
             var valueRect = rect;
             valueRect.xMin += toggleRect.width;
 
-            var label = new GUIContent(property.displayName, property.tooltip);
             using (new EditorGUI.PropertyScope(toggleRect, label, enableProperty))
             {
                 using (var check = new EditorGUI.ChangeCheckScope())
