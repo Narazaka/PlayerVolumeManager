@@ -19,7 +19,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         static GUIContent FoldoutLabel(PlayerVolumeSettingByGroup target, SerializedProperty property, GUIContent fallback)
         {
             if (target == null) return fallback;
-            var group = target._group;
+            var group = target._from;
             if (group == null) return fallback;
             var owner = property.serializedObject.targetObject as PlayerVolumeGroup;
             var text = group == owner ? "(Same Group)" : group.name;
@@ -39,7 +39,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             entry = new Entry
             {
                 SerializedObject = so,
-                Group = so.FindProperty(nameof(PlayerVolumeSettingByGroup._group)),
+                Group = so.FindProperty(nameof(PlayerVolumeSettingByGroup._from)),
                 Properties = PlayerVolumeSettingGUI.Properties.Create(so),
             };
             _cache[id] = entry;

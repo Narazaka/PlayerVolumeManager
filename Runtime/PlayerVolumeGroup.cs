@@ -11,32 +11,32 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         public bool _fallbackToNextGroup;
         [InlinePlayerVolumeSettingByGroup]
         public PlayerVolumeSettingByGroup[] _overrides = new PlayerVolumeSettingByGroup[0];
-        PlayerVolumeGroup[] groups;
+        PlayerVolumeGroup[] froms;
 
         public abstract bool _ContainsPlayer(VRCPlayerApi player);
 
         protected virtual void OnEnable()
         {
             var len = _overrides.Length;
-            groups = new PlayerVolumeGroup[len];
+            froms = new PlayerVolumeGroup[len];
             for (var i = 0; i < len; i++)
             {
-                groups[i] = _overrides[i] == null ? null : _overrides[i]._group;
+                froms[i] = _overrides[i] == null ? null : _overrides[i]._from;
             }
         }
 
-        public bool[] _ApplyVolumesWithOverride(PlayerVolumeSetting parent, VRCPlayerApi player, PlayerVolumeGroup[] playerGroups, bool[] set)
+        public bool[] _ApplyVolumesWithOverride(PlayerVolumeSetting parent, VRCPlayerApi player, PlayerVolumeGroup[] fromGroups, bool[] set)
         {
-            if (playerGroups == null || playerGroups.Length == 0)
+            if (fromGroups == null || fromGroups.Length == 0)
             {
                 return _ApplyVolumes(player, new PlayerVolumeSetting[] {this, parent}, set);
             }
 
-            var len = playerGroups.Length;
+            var len = fromGroups.Length;
             var settings = new PlayerVolumeSetting[len + 2];
             for (var i = 0; i < len; i++)
             {
-                var settingIndex = Array.IndexOf(groups, playerGroups[i]);
+                var settingIndex = Array.IndexOf(froms, fromGroups[i]);
                 settings[i] = settingIndex == -1 ? (PlayerVolumeSetting)this : (PlayerVolumeSetting)_overrides[settingIndex];
             }
             settings[len] = this;

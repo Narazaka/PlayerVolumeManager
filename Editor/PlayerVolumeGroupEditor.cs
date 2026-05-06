@@ -75,13 +75,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 var s = _overrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup;
                 if (s != null)
                 {
-                    if (s._group != null)
+                    if (s._from != null)
                     {
-                        existingGroups.Add(s._group);
-                        if (s.name != s._group.name)
+                        existingGroups.Add(s._from);
+                        if (s.name != s._from.name)
                         {
                             Undo.RecordObject(s.gameObject, "Adjust Setting name");
-                            s.gameObject.name = s._group.name;
+                            s.gameObject.name = s._from.name;
                         }
                     }
                     else
@@ -123,7 +123,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             newGroups.ExceptWith(existingGroups);
             foreach (var group in newGroups)
             {
-                var setting = foundSettings.FirstOrDefault(s => s._group == group);
+                var setting = foundSettings.FirstOrDefault(s => s._from == group);
                 if (setting == null)
                 {
                     setting = CreateSetting(group);
@@ -144,7 +144,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 Undo.RegisterCreatedObjectUndo(parent.gameObject, "Create Overrides Parent");
             }
             var setting = new GameObject(group.name).AddComponent<PlayerVolumeSettingByGroup>();
-            setting._group = group;
+            setting._from = group;
             setting.transform.SetParent(parent, false);
             Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Setting");
             return setting;

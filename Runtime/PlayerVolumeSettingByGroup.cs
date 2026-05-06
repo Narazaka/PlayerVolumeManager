@@ -8,6 +8,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class PlayerVolumeSettingByGroup : PlayerVolumeSetting
     {
-        [SerializeField] public PlayerVolumeGroup _group;
+        [SerializeField] public PlayerVolumeGroup _from;
     }
 }
