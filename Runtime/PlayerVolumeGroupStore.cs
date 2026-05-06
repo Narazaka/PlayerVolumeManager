@@ -1,3 +1,4 @@
+using UnityEngine;
 using VRC.SDKBase;
 
 namespace Narazaka.VRChat.PlayerVolumeManager
@@ -23,6 +24,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                 return new int[0];
             }
             var parts = groupIndexesString.Split(',');
+            // Debug.Log($"[PlayerVolumeGroupStore::StringToInts] \"{groupIndexesString}\" => [{string.Join(",", parts)}]");
             var groupIndexes = new int[parts.Length];
             for (var i = 0; i < parts.Length; i++)
             {

@@ -44,12 +44,12 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                 // logging
                 if (_debugLog)
                 {
-                    var previousGroupIndexStrings = previousGroupIndexesString.Split(',');
-                    var lenp = previousGroupIndexStrings.Length;
+                    var previousGroupIndexes = PlayerVolumeGroupStore.StringToInts(previousGroupIndexesString);
+                    var lenp = previousGroupIndexes.Length;
                     var previousParts = new string[lenp];
                     for (var i = 0; i < lenp; i++)
                     {
-                        var index = int.Parse(previousGroupIndexStrings[i]);
+                        var index = previousGroupIndexes[i];
                         var group = _groups[index];
                         previousParts[i] = $"({index}){group.name}";
                     }
