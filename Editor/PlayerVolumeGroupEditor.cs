@@ -39,7 +39,20 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 {
                     base.DrawVolumeSetting();
                 }
+
+                DrawConsistencyWarning();
             }
+        }
+
+        void DrawConsistencyWarning()
+        {
+            var missing = PlayerVolumeSettingGUI.FindMissingFallback(target as PlayerVolumeGroup, PlayerVolumeSettingGUI.GetManager());
+            if (missing.Count == 0) return;
+            var sb = new System.Text.StringBuilder();
+            foreach (var name in missing) sb.AppendLine($"  - {name}");
+            EditorGUILayout.HelpBox(
+                "以下の項目は override で値が設定されていますが、このグループの Listen Default にも Manager にもフォールバック値がありません:\n" + sb.ToString(),
+                MessageType.Warning);
         }
 
         private protected override PlayerVolumeSettingGUI.Properties BuildFallback() =>

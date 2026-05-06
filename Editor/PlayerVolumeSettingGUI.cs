@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -75,25 +76,119 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         public static Properties GetManagerFallbackProperties()
         {
-            if (_managerEntry == null || _managerEntry.Manager == null)
-            {
-                var found = UnityEngine.Object.FindObjectsByType<PlayerVolumeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-                if (found.Length == 0)
-                {
-                    _managerEntry = null;
-                    return null;
-                }
-                var manager = found[0];
-                var so = new SerializedObject(manager);
-                _managerEntry = new ManagerEntry
-                {
-                    Manager = manager,
-                    SerializedObject = so,
-                    Properties = Properties.Create(so),
-                };
-            }
+            EnsureManagerEntry();
+            if (_managerEntry == null) return null;
             _managerEntry.SerializedObject.UpdateIfRequiredOrScript();
             return _managerEntry.Properties;
+        }
+
+        public static PlayerVolumeManager GetManager()
+        {
+            EnsureManagerEntry();
+            return _managerEntry?.Manager;
+        }
+
+        static void EnsureManagerEntry()
+        {
+            if (_managerEntry != null && _managerEntry.Manager != null) return;
+            var found = UnityEngine.Object.FindObjectsByType<PlayerVolumeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (found.Length == 0)
+            {
+                _managerEntry = null;
+                return;
+            }
+            var manager = found[0];
+            var so = new SerializedObject(manager);
+            _managerEntry = new ManagerEntry
+            {
+                Manager = manager,
+                SerializedObject = so,
+                Properties = Properties.Create(so),
+            };
+        }
+
+        public static List<string> FindMissingFallback(PlayerVolumeGroup group, PlayerVolumeSetting manager)
+        {
+            var missing = new List<string>();
+            if (group == null) return missing;
+            var overrides = group._listenOverrides;
+            if (overrides == null || overrides.Length == 0) return missing;
+
+            if (group._voiceGain < 0f && (manager == null || manager._voiceGain < 0f) && AnyOverrideFloat(overrides, ov => ov._voiceGain))
+                missing.Add("Player Gain");
+            if (group._voiceDistanceNear < 0f && (manager == null || manager._voiceDistanceNear < 0f) && AnyOverrideFloat(overrides, ov => ov._voiceDistanceNear))
+                missing.Add("Player Near");
+            if (group._voiceDistanceFar < 0f && (manager == null || manager._voiceDistanceFar < 0f) && AnyOverrideFloat(overrides, ov => ov._voiceDistanceFar))
+                missing.Add("Player Far");
+            if (group._voiceVolumetricRadius < 0f && (manager == null || manager._voiceVolumetricRadius < 0f) && AnyOverrideFloat(overrides, ov => ov._voiceVolumetricRadius))
+                missing.Add("Player Volumetric Radius");
+            if (!group._enableVoiceLowpass && (manager == null || !manager._enableVoiceLowpass) && AnyOverrideBool(overrides, ov => ov._enableVoiceLowpass))
+                missing.Add("Player Lowpass");
+            if (group._avatarAudioGain < 0f && (manager == null || manager._avatarAudioGain < 0f) && AnyOverrideFloat(overrides, ov => ov._avatarAudioGain))
+                missing.Add("Avatar Gain");
+            if (group._avatarAudioDistanceNear < 0f && (manager == null || manager._avatarAudioDistanceNear < 0f) && AnyOverrideFloat(overrides, ov => ov._avatarAudioDistanceNear))
+                missing.Add("Avatar Near");
+            if (group._avatarAudioDistanceFar < 0f && (manager == null || manager._avatarAudioDistanceFar < 0f) && AnyOverrideFloat(overrides, ov => ov._avatarAudioDistanceFar))
+                missing.Add("Avatar Far");
+            if (group._avatarAudioVolumetricRadius < 0f && (manager == null || manager._avatarAudioVolumetricRadius < 0f) && AnyOverrideFloat(overrides, ov => ov._avatarAudioVolumetricRadius))
+                missing.Add("Avatar Volumetric Radius");
+            if (!group._enableAvatarAudioForceSpatial && (manager == null || !manager._enableAvatarAudioForceSpatial) && AnyOverrideBool(overrides, ov => ov._enableAvatarAudioForceSpatial))
+                missing.Add("Avatar Force Spatial");
+            return missing;
+        }
+
+        static bool AnyOverrideFloat(PlayerVolumeSettingByGroup[] overrides, Func<PlayerVolumeSettingByGroup, float> getter)
+        {
+            foreach (var ov in overrides)
+            {
+                if (ov != null && getter(ov) >= 0f) return true;
+            }
+            return false;
+        }
+
+        static bool AnyOverrideBool(PlayerVolumeSettingByGroup[] overrides, Func<PlayerVolumeSettingByGroup, bool> getter)
+        {
+            foreach (var ov in overrides)
+            {
+                if (ov != null && getter(ov)) return true;
+            }
+            return false;
+        }
+
+        public static List<(string Prop, List<string> NeedFallbackGroups)> FindGroupMixedFields(IReadOnlyList<PlayerVolumeGroup> groups, PlayerVolumeSetting manager)
+        {
+            var result = new List<(string, List<string>)>();
+            if (groups == null || groups.Count == 0) return result;
+
+            TryAddMixed(result, "Player Gain", manager == null || manager._voiceGain < 0f, groups, g => g._voiceGain >= 0f);
+            TryAddMixed(result, "Player Near", manager == null || manager._voiceDistanceNear < 0f, groups, g => g._voiceDistanceNear >= 0f);
+            TryAddMixed(result, "Player Far", manager == null || manager._voiceDistanceFar < 0f, groups, g => g._voiceDistanceFar >= 0f);
+            TryAddMixed(result, "Player Volumetric Radius", manager == null || manager._voiceVolumetricRadius < 0f, groups, g => g._voiceVolumetricRadius >= 0f);
+            TryAddMixed(result, "Player Lowpass", manager == null || !manager._enableVoiceLowpass, groups, g => g._enableVoiceLowpass);
+            TryAddMixed(result, "Avatar Gain", manager == null || manager._avatarAudioGain < 0f, groups, g => g._avatarAudioGain >= 0f);
+            TryAddMixed(result, "Avatar Near", manager == null || manager._avatarAudioDistanceNear < 0f, groups, g => g._avatarAudioDistanceNear >= 0f);
+            TryAddMixed(result, "Avatar Far", manager == null || manager._avatarAudioDistanceFar < 0f, groups, g => g._avatarAudioDistanceFar >= 0f);
+            TryAddMixed(result, "Avatar Volumetric Radius", manager == null || manager._avatarAudioVolumetricRadius < 0f, groups, g => g._avatarAudioVolumetricRadius >= 0f);
+            TryAddMixed(result, "Avatar Force Spatial", manager == null || !manager._enableAvatarAudioForceSpatial, groups, g => g._enableAvatarAudioForceSpatial);
+            return result;
+        }
+
+        static void TryAddMixed(List<(string, List<string>)> result, string prop, bool managerOff, IReadOnlyList<PlayerVolumeGroup> groups, Func<PlayerVolumeGroup, bool> isOn)
+        {
+            if (!managerOff) return;
+            var hasOn = false;
+            var offGroups = new List<string>();
+            for (var i = 0; i < groups.Count; i++)
+            {
+                var g = groups[i];
+                if (g == null) continue;
+                if (isOn(g)) hasOn = true;
+                else offGroups.Add(g.name);
+            }
+            if (hasOn && offGroups.Count > 0)
+            {
+                result.Add((prop, offGroups));
+            }
         }
 
         public static DisplayMode GetMode() => (DisplayMode)EditorPrefs.GetInt(ModePrefKey, 0);

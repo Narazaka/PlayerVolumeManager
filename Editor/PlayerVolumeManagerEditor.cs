@@ -26,6 +26,57 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             {
                 base.Draw();
             }
+            DrawConsistencyWarning();
+        }
+
+        void DrawConsistencyWarning()
+        {
+            var manager = target as PlayerVolumeManager;
+            var groups = new List<PlayerVolumeGroup>();
+            for (var i = 0; i < _groups.arraySize; i++)
+            {
+                var g = _groups.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
+                if (g != null && g._matchWhenListener) groups.Add(g);
+            }
+
+            var orderedProps = new List<string>();
+            var propToReasons = new Dictionary<string, List<string>>();
+            void Add(string prop, string reason)
+            {
+                if (!propToReasons.TryGetValue(prop, out var list))
+                {
+                    list = new List<string>();
+                    propToReasons[prop] = list;
+                    orderedProps.Add(prop);
+                }
+                list.Add(reason);
+            }
+
+            foreach (var group in groups)
+            {
+                foreach (var prop in PlayerVolumeSettingGUI.FindMissingFallback(group, manager))
+                {
+                    Add(prop, group.name);
+                }
+            }
+            foreach (var (prop, needFallbackGroups) in PlayerVolumeSettingGUI.FindGroupMixedFields(groups, manager))
+            {
+                foreach (var groupName in needFallbackGroups)
+                {
+                    Add(prop, $"{groupName} の Listen Default");
+                }
+            }
+
+            if (orderedProps.Count == 0) return;
+
+            var sb = new System.Text.StringBuilder();
+            foreach (var prop in orderedProps)
+            {
+                sb.AppendLine($"  - {prop}: {string.Join(", ", propToReasons[prop])}");
+            }
+            EditorGUILayout.HelpBox(
+                "以下の項目は設定の有無が揃っておらず、フォールバック値が決まらない箇所があります。Manager または下記の各箇所に値を設定してください:\n" + sb.ToString(),
+                MessageType.Warning);
         }
 
         protected override HashSet<string> KnownProperties
