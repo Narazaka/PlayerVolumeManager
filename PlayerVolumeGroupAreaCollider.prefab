@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4305700648357436155}
   - component: {fileID: 4368211542106809943}
   m_Layer: 0
-  m_Name: PlayerVolumeAreaCollider
+  m_Name: PlayerVolumeGroupAreaCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

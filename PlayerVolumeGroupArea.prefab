@@ -75,7 +75,7 @@ GameObject:
   - component: {fileID: 3703893664496581436}
   - component: {fileID: 5557193458299926091}
   m_Layer: 0
-  m_Name: PlayerVolumeArea
+  m_Name: PlayerVolumeGroupArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
