@@ -50,7 +50,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                 var target = _targets[i];
                 if (
                     effectives[i]
-                    && target.bounds.Contains(playerPosition)
                     && playerPosition == target.ClosestPoint(playerPosition)
                     )
                 {
@@ -68,7 +67,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                     target != null
                     && target.enabled
                     && target.gameObject.activeInHierarchy
-                    && target.bounds.Contains(playerPosition)
                     && playerPosition == target.ClosestPoint(playerPosition)
                     )
                 {
