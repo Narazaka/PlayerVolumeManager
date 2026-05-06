@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 {
-    [CustomEditor(typeof(PlayerVolumeGroup))]
+    [CustomEditor(typeof(PlayerVolumeGroup), true)]
     public class PlayerVolumeGroupEditor : PlayerVolumeSettingEditor
     {
         const string OverridesParentName = "Overrides";
@@ -29,7 +29,22 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
-        protected void DrawOverrides()
+        protected override HashSet<string> KnownProperties
+        {
+            get
+            {
+                if (_knownProperties == null)
+                {
+                    _knownProperties = new HashSet<string>(base.KnownProperties);
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._overrides));
+                }
+                return _knownProperties;
+            }
+        }
+
+        static HashSet<string> _knownProperties = null;
+
+        void DrawOverrides()
         {
             EditorGUILayout.PropertyField(_overrides, true);
             if (GUILayout.Button("Fill Overrides"))

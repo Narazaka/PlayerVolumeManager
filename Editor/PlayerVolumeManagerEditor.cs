@@ -28,7 +28,23 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
-        protected void DrawGroups()
+        protected override HashSet<string> KnownProperties
+        {
+            get
+            {
+                if (_knownProperties == null)
+                {
+                    _knownProperties = new HashSet<string>(base.KnownProperties);
+                    _knownProperties.Add(nameof(_groups));
+                    _knownProperties.Add(nameof(_debugLog));
+                }
+                return _knownProperties;
+            }
+        }
+
+        static HashSet<string> _knownProperties = null;
+
+        void DrawGroups()
         {
             EditorGUILayout.PropertyField(_groups, true);
             if (GUILayout.Button("Detect Groups"))
@@ -37,7 +53,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
-        protected void DrawDebugLog()
+        void DrawDebugLog()
         {
             EditorGUILayout.PropertyField(_debugLog);
         }
