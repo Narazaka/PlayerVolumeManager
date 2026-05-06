@@ -1,6 +1,8 @@
 # Player Volume Manager
 
-desc
+プレイヤーの音量・アバター音量をエリア・条件ごとに調整するUdonシステム
+
+聞く側側視点で各グループへの音量設定を管理する形式です。
 
 ## Install
 
@@ -16,7 +18,10 @@ https://github.com/Narazaka/PlayerVolumeManager/releases/latest から `net.nara
 
 ## Usage
 
-TODO
+1. PlayerVolumeManagerを置く
+2. PlayerAudioGroup (Area/Switch/All)等を置いて設定する。
+
+## Changelog
 
 ## License
 
