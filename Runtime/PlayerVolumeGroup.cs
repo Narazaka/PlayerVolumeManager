@@ -8,6 +8,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 {
     public abstract class PlayerVolumeGroup : PlayerVolumeSetting
     {
+        [InlinePlayerVolumeSettingByGroup]
         public PlayerVolumeSettingByGroup[] _overrides = new PlayerVolumeSettingByGroup[0];
         PlayerVolumeGroup[] groups;
 
