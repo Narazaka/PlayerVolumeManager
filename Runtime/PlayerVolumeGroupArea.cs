@@ -5,19 +5,22 @@ using VRC.Udon;
 
 namespace Narazaka.VRChat.PlayerVolumeManager
 {
+    [AddComponentMenu("PlayerVolumeManager/PlayerVolumeGroup (Area)")]
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class PlayerVolumeGroupArea : PlayerVolumeGroup
     {
         [SerializeField] Collider[] _targets;
         [SerializeField] bool _isStatic = true;
 
+        bool canUseBoundsForCollision;
         Bounds staticAllBounds;
         bool[] effectives;
 
         protected override void OnEnable()
         {
             base.OnEnable();
-            if (_isStatic) {
+            if (_isStatic)
+            {
                 CalcAllBounds();
             }
         }
@@ -33,6 +36,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager
             if (!staticAllBounds.Contains(playerPosition))
             {
                 return false;
+            }
+            if (canUseBoundsForCollision)
+            {
+                return true;
             }
             var len = _targets.Length;
             for (var i = 0; i < len; i++)
@@ -72,23 +79,31 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         {
             var len = _targets.Length;
             effectives = new bool[len];
-            var initialized = false;
-            for (var i = 0; i < len; i++) {
+            var effectiveCount = 0;
+            Collider firstCollider = null;
+            for (var i = 0; i < len; i++)
+            {
                 var target = _targets[i];
                 if (target != null && target.enabled && target.gameObject.activeInHierarchy)
                 {
-                    if (!initialized)
+                    if (effectiveCount == 0)
                     {
                         staticAllBounds = target.bounds;
-                        initialized = true;
+                        firstCollider = target;
                     }
                     else
                     {
                         staticAllBounds.Encapsulate(target.bounds);
                     }
+                    effectiveCount++;
                     effectives[i] = true;
                 }
             }
+
+            canUseBoundsForCollision =
+                effectiveCount == 1
+                && firstCollider.GetType() == typeof(BoxCollider)
+                && AxisAllignedChecker.IsRotationAxisAligned2(firstCollider.transform);
         }
     }
 }
