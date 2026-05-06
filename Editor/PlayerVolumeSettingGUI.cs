@@ -26,7 +26,16 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         const float MaxAvatarAudioVolumetricRadius = 1000f;
 
         // Header(1) + Voice(5) + Spacer(1) + Header(1) + AvatarAudio(5)
-        const int LineCount = 13;
+        const int FullLineCount = 13;
+        // Header + toggle row + value row, twice
+        const int CompactLineCount = 6;
+
+        const float CompactToggleWidth = 90f;
+
+        const string CompactPrefKey = "Narazaka.VRChat.PlayerVolumeManager.CompactInspector";
+
+        public static bool IsCompact() => EditorPrefs.GetBool(CompactPrefKey, false);
+        public static void SetCompact(bool value) => EditorPrefs.SetBool(CompactPrefKey, value);
 
         public sealed class Properties
         {
@@ -76,24 +85,31 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         public static float GetHeight()
         {
-            return EditorGUIUtility.singleLineHeight * LineCount
-                 + EditorGUIUtility.standardVerticalSpacing * (LineCount - 1);
+            var lines = IsCompact() ? CompactLineCount : FullLineCount;
+            return EditorGUIUtility.singleLineHeight * lines
+                 + EditorGUIUtility.standardVerticalSpacing * (lines - 1);
         }
 
         public static void Draw(Rect rect, Properties p)
+        {
+            if (IsCompact()) DrawCompact(rect, p);
+            else DrawFull(rect, p);
+        }
+
+        static void DrawFull(Rect rect, Properties p)
         {
             var line = EditorGUIUtility.singleLineHeight;
             var step = line + EditorGUIUtility.standardVerticalSpacing;
             var r = new Rect(rect.x, rect.y, rect.width, line);
 
-            DrawHeader(r, "Player Volume Settings"); r.y += step;
+            DrawHeaderWithCompactToggle(r, "Player Volume"); r.y += step;
             DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar); r.y += step;
             DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius); r.y += step;
             DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass); r.y += step;
             r.y += step;
-            DrawHeader(r, "Avatar Audio Settings"); r.y += step;
+            DrawHeader(r, "Avatar Audio"); r.y += step;
             DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain); r.y += step;
             DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear); r.y += step;
             DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar); r.y += step;
@@ -101,9 +117,101 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             DrawBool(r, Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
         }
 
+        static void DrawCompact(Rect rect, Properties p)
+        {
+            var line = EditorGUIUtility.singleLineHeight;
+            var spacing = EditorGUIUtility.standardVerticalSpacing;
+            var step = line + spacing;
+            var sectionHeight = line + spacing + line;
+            var r = new Rect(rect.x, rect.y, rect.width, line);
+
+            DrawHeaderWithCompactToggle(r, "Player Volume"); r.y += step;
+            var voiceCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
+            DrawCompactFloat(voiceCols[0], Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain);
+            DrawCompactFloat(voiceCols[1], Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear);
+            DrawCompactFloat(voiceCols[2], Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar);
+            DrawCompactFloat(voiceCols[3], Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius);
+            DrawCompactBool(voiceCols[4], Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass);
+            r.y += sectionHeight + spacing;
+
+            DrawHeader(r, "Avatar Audio"); r.y += step;
+            var avatarCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
+            DrawCompactFloat(avatarCols[0], Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain);
+            DrawCompactFloat(avatarCols[1], Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear);
+            DrawCompactFloat(avatarCols[2], Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar);
+            DrawCompactFloat(avatarCols[3], Labels.AvatarAudioVolumetricRadius, p.AvatarAudioVolumetricRadius, DefaultAvatarAudioVolumetricRadius, MaxAvatarAudioVolumetricRadius);
+            DrawCompactBool(avatarCols[4], Labels.AvatarAudioForceSpatial, p.AvatarAudioForceSpatial, p.EnableAvatarAudioForceSpatial, DefaultAvatarAudioForceSpatial);
+        }
+
+        static void DrawCompactFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
+        {
+            var line = EditorGUIUtility.singleLineHeight;
+            var step = line + EditorGUIUtility.standardVerticalSpacing;
+            var toggleRect = new Rect(rect.x, rect.y, rect.width, line);
+            var valueRect = new Rect(rect.x, rect.y + step, rect.width, line);
+
+            using (new EditorGUI.PropertyScope(rect, label, property))
+            {
+                bool effective;
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    effective = EditorGUI.ToggleLeft(toggleRect, label, property.floatValue >= 0f);
+                    if (check.changed) property.floatValue = effective ? defaultValue : -1f;
+                }
+                if (!effective) return;
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    var v = EditorGUI.FloatField(valueRect, property.floatValue);
+                    if (check.changed) property.floatValue = Mathf.Clamp(v, 0f, maxValue);
+                }
+            }
+        }
+
+        static void DrawCompactBool(Rect rect, GUIContent label, SerializedProperty property, SerializedProperty enableProperty, bool defaultValue)
+        {
+            var line = EditorGUIUtility.singleLineHeight;
+            var step = line + EditorGUIUtility.standardVerticalSpacing;
+            var toggleRect = new Rect(rect.x, rect.y, rect.width, line);
+            var valueRect = new Rect(rect.x, rect.y + step, rect.width, line);
+
+            using (new EditorGUI.PropertyScope(toggleRect, label, enableProperty))
+            {
+                using (var check = new EditorGUI.ChangeCheckScope())
+                {
+                    enableProperty.boolValue = EditorGUI.ToggleLeft(toggleRect, label, enableProperty.boolValue);
+                    if (check.changed) property.boolValue = enableProperty.boolValue ? defaultValue : false;
+                }
+            }
+            if (enableProperty.boolValue) EditorGUI.PropertyField(valueRect, property, GUIContent.none);
+        }
+
+        static Rect[] SplitHorizontal(Rect rect, int columns)
+        {
+            var rects = new Rect[columns];
+            var width = rect.width / columns;
+            for (var i = 0; i < columns; i++)
+            {
+                rects[i] = new Rect(rect.x + width * i, rect.y, width, rect.height);
+            }
+            return rects;
+        }
+
         static void DrawHeader(Rect rect, string label)
         {
             EditorGUI.LabelField(rect, label, EditorStyles.boldLabel);
+        }
+
+        static void DrawHeaderWithCompactToggle(Rect rect, string label)
+        {
+            var labelRect = rect; labelRect.width -= CompactToggleWidth;
+            EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
+
+            var toggleRect = rect; toggleRect.xMin = rect.xMax - CompactToggleWidth;
+            using (var check = new EditorGUI.ChangeCheckScope())
+            {
+                var compact = EditorGUI.ToggleLeft(toggleRect, "Compact", IsCompact());
+                if (check.changed) SetCompact(compact);
+            }
         }
 
         static void DrawFloat(Rect rect, GUIContent label, SerializedProperty property, float defaultValue, float maxValue)
