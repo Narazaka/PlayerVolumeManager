@@ -10,7 +10,9 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     public class PlayerVolumeGroupArea : PlayerVolumeGroup
     {
         [SerializeField] Collider[] _targets;
+        [Tooltip("当たり判定の計算を高速化:\n* enabledな間位置が変化しない場合\n* コライダーがグローバル軸平行ならさらに高速化")]
         [SerializeField] bool _isStatic = true;
+        [SerializeField] bool _debugLog;
 
         bool canUseBoundsForCollision;
         Bounds staticAllBounds;
@@ -104,6 +106,8 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                 effectiveCount == 1
                 && firstCollider.GetType() == typeof(BoxCollider)
                 && AxisAllignedChecker.IsRotationAxisAligned2(firstCollider.transform);
+
+            if (_debugLog) Debug.Log($"[PlayerVolumeManager::PlayerVolumeGroupArea]({name}): isStatic(opt)={_isStatic} canUseBoundsForCollision(more opt)={canUseBoundsForCollision}");
         }
     }
 }

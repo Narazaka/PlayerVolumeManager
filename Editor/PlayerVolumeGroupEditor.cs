@@ -10,16 +10,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
     {
         const string OverridesParentName = "Overrides";
 
+        SerializedProperty _fallbackToNextGroup;
         SerializedProperty _overrides;
 
         protected override void OnEnable()
         {
             base.OnEnable();
             _overrides = serializedObject.FindProperty(nameof(PlayerVolumeGroup._overrides));
+            _fallbackToNextGroup = serializedObject.FindProperty(nameof(PlayerVolumeGroup._fallbackToNextGroup));
         }
 
         public override void Draw()
         {
+            DrawFallbackToNextGroup();
             DrawOverrides();
 
             DrawHeader("Default Setting");
@@ -36,6 +39,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 if (_knownProperties == null)
                 {
                     _knownProperties = new HashSet<string>(base.KnownProperties);
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._fallbackToNextGroup));
                     _knownProperties.Add(nameof(PlayerVolumeGroup._overrides));
                 }
                 return _knownProperties;
@@ -43,6 +47,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         }
 
         static HashSet<string> _knownProperties = null;
+
+        void DrawFallbackToNextGroup()
+        {
+            EditorGUILayout.PropertyField(_fallbackToNextGroup);
+        }
 
         void DrawOverrides()
         {

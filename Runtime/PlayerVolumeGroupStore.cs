@@ -6,25 +6,43 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     {
         const string TagPlayerVolumeGroup = "Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeGroup";
 
-        public static string GetPlayerVolumeGroupIndex(VRCPlayerApi player)
+        public static string Get(VRCPlayerApi player)
         {
             return player.GetPlayerTag(TagPlayerVolumeGroup);
         }
 
-        public static void SetPlayerVolumeGroupIndex(VRCPlayerApi player, string groupIndex)
+        public static void Set(VRCPlayerApi player, string groupIndexes)
         {
-            player.SetPlayerTag(TagPlayerVolumeGroup, groupIndex);
+            player.SetPlayerTag(TagPlayerVolumeGroup, groupIndexes);
         }
 
-        /// <returns>true if changed</returns>
-        public static bool SetPlayerVolumeGroupIndexIfChanged(VRCPlayerApi player, string groupIndex)
+        public static int[] StringToInts(string groupIndexesString)
         {
-            if (GetPlayerVolumeGroupIndex(player) != groupIndex)
+            if (string.IsNullOrEmpty(groupIndexesString))
             {
-                SetPlayerVolumeGroupIndex(player, groupIndex);
-                return true;
+                return new int[0];
             }
-            return false;
+            var parts = groupIndexesString.Split(',');
+            var groupIndexes = new int[parts.Length];
+            for (var i = 0; i < parts.Length; i++)
+            {
+                groupIndexes[i] = int.Parse(parts[i]);
+            }
+            return groupIndexes;
+        }
+
+        public static string IntsToString(int[] groupIndexes)
+        {
+            if (groupIndexes == null || groupIndexes.Length == 0)
+            {
+                return null;
+            }
+            var parts = new string[groupIndexes.Length];
+            for (var i = 0; i < groupIndexes.Length; i++)
+            {
+                parts[i] = groupIndexes[i].ToString();
+            }
+            return string.Join(",", parts);
         }
     }
 }

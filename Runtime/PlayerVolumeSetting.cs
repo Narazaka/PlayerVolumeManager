@@ -21,80 +21,26 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         public bool _enableAvatarAudioForceSpatial = false;
         public bool _avatarAudioForceSpatial = false;
 
-        public void _ApplyVolumes(VRCPlayerApi player)
+        const int SetCount = 10;
+
+        public static bool[] CreateApplySet()
         {
-            _SetVoiceGain(player);
-            _SetVoiceDistanceNear(player);
-            _SetVoiceDistanceFar(player);
-            _SetVoiceVolumetricRadius(player);
-            _SetVoiceLowpass(player);
-            _SetAvatarAudioGain(player);
-            _SetAvatarAudioDistanceNear(player);
-            _SetAvatarAudioDistanceFar(player);
-            _SetAvatarAudioVolumetricRadius(player);
-            _SetAvatarAudioForceSpatial(player);
+            return new bool[SetCount];
         }
 
-        public void _ApplyVolumes(PlayerVolumeSetting parent, VRCPlayerApi player)
+        public static bool[] _ApplyVolumes(VRCPlayerApi player, PlayerVolumeSetting[] settings, bool[] set)
         {
-            if (parent == null)
-            {
-                _ApplyVolumes(player);
-                return;
-            }
-            if (!_SetVoiceGain(player)) parent._SetVoiceGain(player);
-            if (!_SetVoiceDistanceNear(player)) parent._SetVoiceDistanceNear(player);
-            if (!_SetVoiceDistanceFar(player)) parent._SetVoiceDistanceFar(player);
-            if (!_SetVoiceVolumetricRadius(player)) parent._SetVoiceVolumetricRadius(player);
-            if (!_SetVoiceLowpass(player)) parent._SetVoiceLowpass(player);
-            if (!_SetAvatarAudioGain(player)) parent._SetAvatarAudioGain(player);
-            if (!_SetAvatarAudioDistanceNear(player)) parent._SetAvatarAudioDistanceNear(player);
-            if (!_SetAvatarAudioDistanceFar(player)) parent._SetAvatarAudioDistanceFar(player);
-            if (!_SetAvatarAudioVolumetricRadius(player)) parent._SetAvatarAudioVolumetricRadius(player);
-            if (!_SetAvatarAudioForceSpatial(player)) parent._SetAvatarAudioForceSpatial(player);
-        }
-
-        public void _ApplyVolumes(PlayerVolumeSetting parent, VRCPlayerApi player, PlayerVolumeSetting over)
-        {
-            if (over == null)
-            {
-                _ApplyVolumes(parent, player);
-                return;
-            }
-            else if (parent == null)
-            {
-                _ApplyVolumes(player, over);
-                return;
-            }
-            if (!over._SetVoiceGain(player) && !_SetVoiceGain(player)) parent._SetVoiceGain(player);
-            if (!over._SetVoiceDistanceNear(player) && !_SetVoiceDistanceNear(player)) parent._SetVoiceDistanceNear(player);
-            if (!over._SetVoiceDistanceFar(player) && !_SetVoiceDistanceFar(player)) parent._SetVoiceDistanceFar(player);
-            if (!over._SetVoiceVolumetricRadius(player) && !_SetVoiceVolumetricRadius(player)) parent._SetVoiceVolumetricRadius(player);
-            if (!over._SetVoiceLowpass(player) && !_SetVoiceLowpass(player)) parent._SetVoiceLowpass(player);
-            if (!over._SetAvatarAudioGain(player) && !_SetAvatarAudioGain(player)) parent._SetAvatarAudioGain(player);
-            if (!over._SetAvatarAudioDistanceNear(player) && !_SetAvatarAudioDistanceNear(player)) parent._SetAvatarAudioDistanceNear(player);
-            if (!over._SetAvatarAudioDistanceFar(player) && !_SetAvatarAudioDistanceFar(player)) parent._SetAvatarAudioDistanceFar(player);
-            if (!over._SetAvatarAudioVolumetricRadius(player) && !_SetAvatarAudioVolumetricRadius(player)) parent._SetAvatarAudioVolumetricRadius(player);
-            if (!over._SetAvatarAudioForceSpatial(player) && !_SetAvatarAudioForceSpatial(player)) parent._SetAvatarAudioForceSpatial(player);
-        }
-
-        public void _ApplyVolumes(VRCPlayerApi player, PlayerVolumeSetting over)
-        {
-            if (over == null)
-            {
-                _ApplyVolumes(player);
-                return;
-            }
-            if (!over._SetVoiceGain(player)) _SetVoiceGain(player);
-            if (!over._SetVoiceDistanceNear(player)) _SetVoiceDistanceNear(player);
-            if (!over._SetVoiceDistanceFar(player)) _SetVoiceDistanceFar(player);
-            if (!over._SetVoiceVolumetricRadius(player)) _SetVoiceVolumetricRadius(player);
-            if (!over._SetVoiceLowpass(player)) _SetVoiceLowpass(player);
-            if (!over._SetAvatarAudioGain(player)) _SetAvatarAudioGain(player);
-            if (!over._SetAvatarAudioDistanceNear(player)) _SetAvatarAudioDistanceNear(player);
-            if (!over._SetAvatarAudioDistanceFar(player)) _SetAvatarAudioDistanceFar(player);
-            if (!over._SetAvatarAudioVolumetricRadius(player)) _SetAvatarAudioVolumetricRadius(player);
-            if (!over._SetAvatarAudioForceSpatial(player)) _SetAvatarAudioForceSpatial(player);
+            if (!set[0]) foreach (var setting in settings) if (setting._SetVoiceGain(player)) { set[0] = true; break; }
+            if (!set[1]) foreach (var setting in settings) if (setting._SetVoiceDistanceNear(player)) { set[1] = true; break; }
+            if (!set[2]) foreach (var setting in settings) if (setting._SetVoiceDistanceFar(player)) { set[2] = true; break; }
+            if (!set[3]) foreach (var setting in settings) if (setting._SetVoiceVolumetricRadius(player)) { set[3] = true; break; }
+            if (!set[4]) foreach (var setting in settings) if (setting._SetVoiceLowpass(player)) { set[4] = true; break; }
+            if (!set[5]) foreach (var setting in settings) if (setting._SetAvatarAudioGain(player)) { set[5] = true; break; }
+            if (!set[6]) foreach (var setting in settings) if (setting._SetAvatarAudioDistanceNear(player)) { set[6] = true; break; }
+            if (!set[7]) foreach (var setting in settings) if (setting._SetAvatarAudioDistanceFar(player)) { set[7] = true; break; }
+            if (!set[8]) foreach (var setting in settings) if (setting._SetAvatarAudioVolumetricRadius(player)) { set[8] = true; break; }
+            if (!set[9]) foreach (var setting in settings) if (setting._SetAvatarAudioForceSpatial(player)) { set[9] = true; break; }
+            return set;
         }
 
 

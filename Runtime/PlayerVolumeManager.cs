@@ -14,11 +14,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         VRCPlayerApi[] players = new VRCPlayerApi[1];
         int playerIndex;
-        PlayerVolumeGroup selfGroup;
+        PlayerVolumeGroup[] selfGroups;
 
         void Update()
         {
-            var player = selfGroup == null ? Networking.LocalPlayer : players[Time.frameCount % players.Length];
+            var player = selfGroups == null ? Networking.LocalPlayer : players[Time.frameCount % players.Length];
             if (Utilities.IsValid(player))
             {
                 ProcessPlayer(player);
@@ -28,27 +28,44 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         void ProcessPlayer(VRCPlayerApi player)
         {
-            var groupIndex = DetectPlayerGroup(player);
-            var groupIndexString = groupIndex == -1 ? null : groupIndex.ToString();
-            var previousGroupIndexString = PlayerVolumeGroupStore.GetPlayerVolumeGroupIndex(player);
-            if (previousGroupIndexString != groupIndexString)
+            var groupIndexes = DetectPlayerGroups(player);
+            var groupIndexesString = groupIndexes.Length == 0 ? null : PlayerVolumeGroupStore.IntsToString(groupIndexes);
+            var previousGroupIndexesString = PlayerVolumeGroupStore.Get(player);
+            if (previousGroupIndexesString != groupIndexesString)
             {
-                PlayerVolumeGroupStore.SetPlayerVolumeGroupIndex(player, groupIndexString);
-                var group = groupIndex < 0 ? null : _groups[groupIndex];
+                PlayerVolumeGroupStore.Set(player, groupIndexesString);
+                var len = groupIndexes.Length;
+                var groups = new PlayerVolumeGroup[len];
+                for (var i = 0; i < len; i++)
+                {
+                    groups[i] = _groups[groupIndexes[i]];
+                }
 
                 // logging
                 if (_debugLog)
                 {
-                    var previousGroupIndex = string.IsNullOrEmpty(previousGroupIndexString) ? -1 : int.Parse(previousGroupIndexString);
-                    var previousGroup = previousGroupIndex < 0 ? null : _groups[previousGroupIndex];
-                    var groupName = group == null ? "None" : group.name;
-                    var previousGroupName = previousGroup == null ? "None" : previousGroup.name;
-                    Debug.Log($"[PlayerVolumeManager]({player.playerId})<{player.displayName}>{(player.isLocal ? "(SELF)" : "")} [{previousGroupIndexString}]({previousGroupName}) => [{groupIndexString}]({groupName})");
+                    var previousGroupIndexStrings = previousGroupIndexesString.Split(',');
+                    var lenp = previousGroupIndexStrings.Length;
+                    var previousParts = new string[lenp];
+                    for (var i = 0; i < lenp; i++)
+                    {
+                        var index = int.Parse(previousGroupIndexStrings[i]);
+                        var group = _groups[index];
+                        previousParts[i] = $"({index}){group.name}";
+                    }
+                    var parts = new string[len];
+                    for (var i = 0; i < len; i++)
+                    {
+                        var index = groupIndexes[i];
+                        var group = groups[i];
+                        parts[i] = $"({index}){group.name}";
+                    }
+                    Debug.Log($"[PlayerVolumeManager::PlayerVolumeManager]({player.playerId})<{player.displayName}>{(player.isLocal ? "(SELF)" : "")} [{string.Join(",", previousParts)}] => [{string.Join(",", parts)}]");
                 }
 
                 if (player.isLocal)
                 {
-                    selfGroup = group;
+                    selfGroups = groups;
                     foreach (var p in players)
                     {
                         if (Utilities.IsValid(p))
@@ -59,52 +76,70 @@ namespace Narazaka.VRChat.PlayerVolumeManager
                 }
                 else
                 {
-                    ApplySuitableVolumes(player, group);
+                    ApplySuitableVolumes(player, groups);
                 }
             }
         }
 
         void ApplySuitableVolumes(VRCPlayerApi player)
         {
-            if (selfGroup == null)
+            if (selfGroups == null)
             {
-                _ApplyVolumes(player);
+                _ApplyVolumes(player, new PlayerVolumeSetting[] { this }, CreateApplySet());
             }
             else
             {
-                var groupIndexString = PlayerVolumeGroupStore.GetPlayerVolumeGroupIndex(player);
-                var groupIndex = string.IsNullOrEmpty(groupIndexString) ? -1 : int.Parse(groupIndexString);
-                var group = groupIndex < 0 ? null : _groups[groupIndex];
-                selfGroup._ApplyVolumesWithOverride(this, player, group);
+                var groupIndexes = PlayerVolumeGroupStore.StringToInts(PlayerVolumeGroupStore.Get(player));
+                var len = groupIndexes.Length;
+                var groups = new PlayerVolumeGroup[len];
+                for (var i = 0; i < len; i++)
+                {
+                    groups[i] = _groups[groupIndexes[i]];
+                }
+                var applySet = CreateApplySet();
+                foreach (var sg in selfGroups)
+                {
+                    applySet = sg._ApplyVolumesWithOverride(this, player, groups, applySet);
+                }
             }
         }
 
-        void ApplySuitableVolumes(VRCPlayerApi player, PlayerVolumeGroup group)
+        void ApplySuitableVolumes(VRCPlayerApi player, PlayerVolumeGroup[] groups)
         {
-            if (selfGroup == null)
+            if (selfGroups == null)
             {
-                _ApplyVolumes(player);
+                _ApplyVolumes(player, new PlayerVolumeSetting[] { this }, CreateApplySet());
             }
             else
             {
-                selfGroup._ApplyVolumesWithOverride(this, player, group);
+                var applySet = CreateApplySet();
+                foreach (var sg in selfGroups)
+                {
+                    applySet = sg._ApplyVolumesWithOverride(this, player, groups, applySet);
+                }
             }
         }
 
-        int DetectPlayerGroup(VRCPlayerApi player)
+        int[] DetectPlayerGroups(VRCPlayerApi player)
         {
-            var groupIndex = -1;
             var len = _groups.Length;
+            var groupIndexes = new int[len];
+            var matchedGroupCount = 0;
             for (var i = 0; i < len; i++)
             {
                 var group = _groups[i];
                 if (group != null && group.isActiveAndEnabled && group._ContainsPlayer(player))
                 {
-                    groupIndex = i;
-                    break;
+                    groupIndexes[matchedGroupCount++] = i;
+                    if (!group._fallbackToNextGroup)
+                    {
+                        break;
+                    }
                 }
             }
-            return groupIndex;
+            var matchedGroupIndexes = new int[matchedGroupCount];
+            Array.Copy(groupIndexes, matchedGroupIndexes, matchedGroupCount);
+            return matchedGroupIndexes;
         }
 
         public override void OnPlayerJoined(VRCPlayerApi player)
