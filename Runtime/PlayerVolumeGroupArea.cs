@@ -6,7 +6,7 @@ using VRC.Udon;
 namespace Narazaka.VRChat.PlayerVolumeManager
 {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class PlayerVolumeArea : PlayerVolumeGroup
+    public class PlayerVolumeGroupArea : PlayerVolumeGroup
     {
         [SerializeField] Collider[] _targets;
         [SerializeField] bool _isStatic = true;

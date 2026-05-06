@@ -4,8 +4,8 @@ using UdonSharpEditor;
 
 namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 {
-    [CustomEditor(typeof(PlayerVolumeArea))]
-    public class PlayerVolumeAreaEditor : PlayerVolumeGroupEditor
+    [CustomEditor(typeof(PlayerVolumeGroupArea))]
+    public class PlayerVolumeGroupAreaEditor : PlayerVolumeGroupEditor
     {
         SerializedProperty _targets;
         SerializedProperty _isStatic;
