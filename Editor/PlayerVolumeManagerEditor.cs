@@ -8,16 +8,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
     public class PlayerVolumeManagerEditor : PlayerVolumeSettingEditor
     {
         SerializedProperty _groups;
+        SerializedProperty _debugLog;
 
         protected override void OnEnable()
         {
             base.OnEnable();
             _groups = serializedObject.FindProperty(nameof(_groups));
+            _debugLog = serializedObject.FindProperty(nameof(_debugLog));
         }
 
         public override void Draw()
         {
             DrawGroups();
+            DrawDebugLog();
             DrawHeader("Default Setting");
             using (new EditorGUI.IndentLevelScope())
             {
@@ -32,6 +35,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             {
                 DetectGroups();
             }
+        }
+
+        protected void DrawDebugLog()
+        {
+            EditorGUILayout.PropertyField(_debugLog);
         }
 
         void DetectGroups()

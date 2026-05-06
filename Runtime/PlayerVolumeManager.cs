@@ -10,27 +10,85 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     public class PlayerVolumeManager : PlayerVolumeSetting
     {
         [SerializeField] PlayerVolumeGroup[] _groups = new PlayerVolumeGroup[0];
+        [SerializeField] bool _debugLog;
 
         VRCPlayerApi[] players = new VRCPlayerApi[1];
         int playerIndex;
+        PlayerVolumeGroup selfGroup;
 
         void Update()
         {
-            var player = players[playerIndex];
-            if (!Utilities.IsValid(player))
+            var player = selfGroup == null ? Networking.LocalPlayer : players[playerIndex];
+            if (Utilities.IsValid(player))
             {
-                return;
+                ProcessPlayer(player);
             }
+            playerIndex = (playerIndex + 1) % players.Length;
+        }
 
+        void ProcessPlayer(VRCPlayerApi player)
+        {
             var groupIndex = DetectPlayerGroup(player);
-            var groupIndexString = groupIndex.ToString();
-            if (PlayerVolumeGroupStore.GetPlayerVolumeGroupIndex(player) != groupIndexString)
+            var groupIndexString = groupIndex == -1 ? null : groupIndex.ToString();
+            var previousGroupIndexString = PlayerVolumeGroupStore.GetPlayerVolumeGroupIndex(player);
+            if (previousGroupIndexString != groupIndexString)
             {
                 PlayerVolumeGroupStore.SetPlayerVolumeGroupIndex(player, groupIndexString);
-                _groups[groupIndex]._ApplyVolumesWithOverride(this, player, groupIndex == -1 ? null : _groups[groupIndex]);
-            }
+                var group = groupIndex < 0 ? null : _groups[groupIndex];
 
-            playerIndex = (playerIndex + 1) % players.Length;
+                // logging
+                if (_debugLog)
+                {
+                    var previousGroupIndex = string.IsNullOrEmpty(previousGroupIndexString) ? -1 : int.Parse(previousGroupIndexString);
+                    var previousGroup = previousGroupIndex < 0 ? null : _groups[previousGroupIndex];
+                    var groupName = group == null ? "None" : group.name;
+                    var previousGroupName = previousGroup == null ? "None" : previousGroup.name;
+                    Debug.Log($"[PlayerVolumeManager]({player.playerId})<{player.displayName}>{(player.isLocal ? "(SELF)" : "")} [{previousGroupIndexString}]({previousGroupName}) => [{groupIndexString}]({groupName})");
+                }
+
+                if (player.isLocal)
+                {
+                    selfGroup = group;
+                    foreach (var p in players)
+                    {
+                        if (Utilities.IsValid(p))
+                        {
+                            ApplySuitableVolumes(p);
+                        }
+                    }
+                }
+                else
+                {
+                    ApplySuitableVolumes(player, group);
+                }
+            }
+        }
+
+        void ApplySuitableVolumes(VRCPlayerApi player)
+        {
+            if (selfGroup == null)
+            {
+                _ApplyVolumes(player);
+            }
+            else
+            {
+                var groupIndexString = PlayerVolumeGroupStore.GetPlayerVolumeGroupIndex(player);
+                var groupIndex = string.IsNullOrEmpty(groupIndexString) ? -1 : int.Parse(groupIndexString);
+                var group = groupIndex < 0 ? null : _groups[groupIndex];
+                selfGroup._ApplyVolumesWithOverride(this, player, group);
+            }
+        }
+
+        void ApplySuitableVolumes(VRCPlayerApi player, PlayerVolumeGroup group)
+        {
+            if (selfGroup == null)
+            {
+                _ApplyVolumes(player);
+            }
+            else
+            {
+                selfGroup._ApplyVolumesWithOverride(this, player, group);
+            }
         }
 
         int DetectPlayerGroup(VRCPlayerApi player)
@@ -52,6 +110,8 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         public override void OnPlayerJoined(VRCPlayerApi player)
         {
             players = VRCPlayerApi.GetPlayers(players);
+
+            ApplySuitableVolumes(player);
         }
 
         public override void OnPlayerLeft(VRCPlayerApi player)
