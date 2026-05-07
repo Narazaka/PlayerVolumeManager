@@ -23,6 +23,7 @@ https://github.com/Narazaka/PlayerVolumeManager/releases/latest から `net.nara
 
 ## Changelog
 
+- 1.0.0-alpha.7: コンポーネントリネーム
 - 1.0.0-alpha.6: (breaking) group/settingの組をGameObjectとして管理するように
 - 1.0.0-alpha.5: テストを含めないでリリースするように
 - 1.0.0-alpha.4: listen fromのインスペクタバグ修正・テスト
