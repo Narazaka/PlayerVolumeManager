@@ -238,23 +238,24 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             for (var i = 0; i < existing.Length; i++) existingGroups.Add(existing[i]._group);
             var missing = PlayerVolumeListenPairDetect.Compute(existingGroups, managerGroups);
 
-            // wrapper 確保
+            // wrapper 確保 (注: RegisterCreatedObjectUndo は GO の状態をスナップショットで記録するため、
+            //   親設定・component 追加・フィールド代入を全て終えた最後に呼ぶこと。Redo 時に snapshot から復元される)
             var wrapper = owner.transform.Find(PlayerVolumeSettingGUI.ListenOverridesParentName);
             if (wrapper == null)
             {
                 var wrapperGO = new GameObject(PlayerVolumeSettingGUI.ListenOverridesParentName);
-                Undo.RegisterCreatedObjectUndo(wrapperGO, "Create Listen Overrides Wrapper");
                 wrapperGO.transform.SetParent(owner.transform, false);
+                Undo.RegisterCreatedObjectUndo(wrapperGO, "Create Listen Overrides Wrapper");
                 wrapper = wrapperGO.transform;
             }
 
             foreach (var g in missing)
             {
                 var pairGO = new GameObject(g != null ? g.name : "Pair");
-                Undo.RegisterCreatedObjectUndo(pairGO, "Create Listen Pair");
                 pairGO.transform.SetParent(wrapper, false);
                 var pair = pairGO.AddComponent<PlayerVolumeListenPair>();
                 pair._group = g;
+                Undo.RegisterCreatedObjectUndo(pairGO, "Create Listen Pair");
             }
         }
 
