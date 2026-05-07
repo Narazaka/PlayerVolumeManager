@@ -125,55 +125,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void ApplyReorderToOverrides(Object[] beforeFromGroups, Object[] beforeOverrides, Object[] afterFromGroups)
         {
-            var len = afterFromGroups.Length;
-            _listenOverrides.arraySize = len;
-            var consumed = new bool[beforeFromGroups.Length];
-            var matched = new bool[len];
-            var settings = new Object[len];
-
-            // Pass 1: same-index AND same-group (no-move). Always wins so that an unrelated
-            // null slot at another index does not poach the "kept" setting.
-            for (var i = 0; i < len && i < beforeFromGroups.Length; i++)
-            {
-                if (afterFromGroups[i] != beforeFromGroups[i]) continue;
-                if (i < beforeOverrides.Length) settings[i] = beforeOverrides[i];
-                consumed[i] = true;
-                matched[i] = true;
-            }
-
-            // Pass 2: different-index, same-group (moved across reorder). For unmatched after
-            // slots, find an unconsumed before slot with the same group. Duplicate references
-            // and multiple null rows are handled by first-come-first-served consumption.
-            for (var i = 0; i < len; i++)
-            {
-                if (matched[i]) continue;
-                var g = afterFromGroups[i];
-                for (var idx = 0; idx < beforeFromGroups.Length; idx++)
-                {
-                    if (consumed[idx]) continue;
-                    if (beforeFromGroups[idx] != g) continue;
-                    if (idx < beforeOverrides.Length) settings[i] = beforeOverrides[idx];
-                    consumed[idx] = true;
-                    matched[i] = true;
-                    break;
-                }
-            }
-
-            // Pass 3: same-index fallback. The slot stayed at index i but its group reference
-            // changed (orphan filled / replaced with another group / cleared to null). Inherit
-            // the same-index setting if it has not been consumed by previous passes. New rows
-            // appended by "+" land here too but their before-side index is out of range, so
-            // they end up with null (placeholder).
-            for (var i = 0; i < len; i++)
-            {
-                if (matched[i]) continue;
-                if (i >= beforeFromGroups.Length || consumed[i]) continue;
-                if (i < beforeOverrides.Length) settings[i] = beforeOverrides[i];
-                consumed[i] = true;
-            }
-
-            // Apply
-            for (var i = 0; i < len; i++)
+            var settings = PlayerVolumeGroupListenOverridesUtil.ComputeReorderedOverrides(
+                beforeFromGroups, beforeOverrides, afterFromGroups);
+            _listenOverrides.arraySize = settings.Length;
+            for (var i = 0; i < settings.Length; i++)
             {
                 _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = settings[i];
             }
@@ -181,49 +136,34 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void FillOverrides()
         {
-            // Drop entries whose group reference is null (cleanup pass moved here from SyncOverrideArrays).
-            for (var i = _listenFromGroups.arraySize - 1; i >= 0; i--)
-            {
-                if (_listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue == null)
-                {
-                    _listenFromGroups.DeleteArrayElementAtIndex(i);
-                    if (i < _listenOverrides.arraySize)
-                    {
-                        _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
-                        _listenOverrides.DeleteArrayElementAtIndex(i);
-                    }
-                }
-            }
-
             var ownerGroup = target as PlayerVolumeGroup;
 
-            // Pick up existing settings under ListenOverrides parent (by GameObject name).
-            var existingSettings = new Dictionary<string, PlayerVolumeSettingByGroup>();
+            // Snapshot existing arrays.
+            var existingFromGroups = new PlayerVolumeGroup[_listenFromGroups.arraySize];
+            for (var i = 0; i < existingFromGroups.Length; i++)
+            {
+                existingFromGroups[i] = _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
+            }
+            var existingOverrides = new PlayerVolumeSettingByGroup[_listenOverrides.arraySize];
+            for (var i = 0; i < existingOverrides.Length; i++)
+            {
+                existingOverrides[i] = _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup;
+            }
+
+            // Existing settings under the ListenOverrides parent (by GameObject name).
+            var settingsByName = new Dictionary<string, PlayerVolumeSettingByGroup>();
             var overridesParent = ownerGroup.transform.Find(PlayerVolumeSettingGUI.ListenOverridesParentName);
             if (overridesParent != null)
             {
                 foreach (Transform child in overridesParent)
                 {
                     var s = child.GetComponent<PlayerVolumeSettingByGroup>();
-                    if (s != null) existingSettings[child.name] = s;
+                    if (s != null) settingsByName[child.name] = s;
                 }
             }
 
-            // Snapshot current (group -> setting) mapping.
-            var currentMap = new Dictionary<PlayerVolumeGroup, PlayerVolumeSettingByGroup>();
-            for (var i = 0; i < _listenFromGroups.arraySize; i++)
-            {
-                var g = _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
-                if (g == null) continue;
-                var s = i < _listenOverrides.arraySize
-                    ? _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup
-                    : null;
-                if (s == null) existingSettings.TryGetValue(g.name, out s);
-                currentMap[g] = s;
-            }
-
-            // Decide ordering: prefer Manager._groups order, then leftovers.
-            var orderedGroups = new List<PlayerVolumeGroup>();
+            // Manager order (or scene scan as a fallback when there is no Manager yet).
+            PlayerVolumeGroup[] managerGroups;
             var manager = PlayerVolumeSettingGUI.GetManager();
             if (manager != null)
             {
@@ -231,38 +171,31 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 var managerGroupsProp = managerSO.FindProperty("_groups");
                 if (managerGroupsProp != null)
                 {
-                    for (var i = 0; i < managerGroupsProp.arraySize; i++)
+                    managerGroups = new PlayerVolumeGroup[managerGroupsProp.arraySize];
+                    for (var i = 0; i < managerGroups.Length; i++)
                     {
-                        var g = managerGroupsProp.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
-                        if (g != null && !orderedGroups.Contains(g)) orderedGroups.Add(g);
+                        managerGroups[i] = managerGroupsProp.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
                     }
+                }
+                else
+                {
+                    managerGroups = new PlayerVolumeGroup[0];
                 }
             }
             else
             {
-                foreach (var g in FindObjectsByType<PlayerVolumeGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                {
-                    if (g != null && !orderedGroups.Contains(g)) orderedGroups.Add(g);
-                }
-            }
-            // Append entries that exist in current registration but not in Manager (preserve user data).
-            foreach (var kv in currentMap)
-            {
-                if (!orderedGroups.Contains(kv.Key)) orderedGroups.Add(kv.Key);
+                managerGroups = FindObjectsByType<PlayerVolumeGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             }
 
-            // Write back arrays in the new order.
-            _listenFromGroups.arraySize = orderedGroups.Count;
-            _listenOverrides.arraySize = orderedGroups.Count;
-            for (var i = 0; i < orderedGroups.Count; i++)
+            var (newFromGroups, newOverrides) = PlayerVolumeGroupListenOverridesUtil.ComputeFilledOverrides(
+                existingFromGroups, existingOverrides, managerGroups, settingsByName);
+
+            _listenFromGroups.arraySize = newFromGroups.Length;
+            _listenOverrides.arraySize = newOverrides.Length;
+            for (var i = 0; i < newFromGroups.Length; i++)
             {
-                var g = orderedGroups[i];
-                _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue = g;
-                if (!currentMap.TryGetValue(g, out var setting))
-                {
-                    existingSettings.TryGetValue(g.name, out setting);
-                }
-                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
+                _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue = newFromGroups[i];
+                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = newOverrides[i];
             }
         }
     }
