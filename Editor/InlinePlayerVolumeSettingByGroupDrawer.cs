@@ -85,11 +85,15 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 objectRect.xMin = headerRect.x + EditorGUIUtility.labelWidth;
 
                 var fromGroup = property.objectReferenceValue as PlayerVolumeGroup;
-                using (new EditorGUI.DisabledScope(fromGroup == null))
+                if (fromGroup != null)
                 {
-                    var expanded = property.isExpanded && fromGroup != null;
+                    var expanded = property.isExpanded;
                     var newExpanded = EditorGUI.Foldout(foldoutRect, expanded, FoldoutLabel(fromGroup, property, label), true);
                     if (newExpanded != expanded) property.isExpanded = newExpanded;
+                }
+                else
+                {
+                    EditorGUI.LabelField(foldoutRect, label);
                 }
 
                 EditorGUI.ObjectField(objectRect, property, typeof(PlayerVolumeGroup), GUIContent.none);
