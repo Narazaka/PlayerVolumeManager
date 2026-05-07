@@ -131,12 +131,22 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var matched = new bool[len];
             var settings = new Object[len];
 
-            // Pass 1: same-group reorder.
-            // Each after slot consumes a unique before slot whose group matches. Duplicate group
-            // references and multiple null/orphan rows are handled because slots are consumed
-            // first-come-first-served instead of always falling back to the first IndexOf.
+            // Pass 1: same-index AND same-group (no-move). Always wins so that an unrelated
+            // null slot at another index does not poach the "kept" setting.
+            for (var i = 0; i < len && i < beforeFromGroups.Length; i++)
+            {
+                if (afterFromGroups[i] != beforeFromGroups[i]) continue;
+                if (i < beforeOverrides.Length) settings[i] = beforeOverrides[i];
+                consumed[i] = true;
+                matched[i] = true;
+            }
+
+            // Pass 2: different-index, same-group (moved across reorder). For unmatched after
+            // slots, find an unconsumed before slot with the same group. Duplicate references
+            // and multiple null rows are handled by first-come-first-served consumption.
             for (var i = 0; i < len; i++)
             {
+                if (matched[i]) continue;
                 var g = afterFromGroups[i];
                 for (var idx = 0; idx < beforeFromGroups.Length; idx++)
                 {
@@ -149,11 +159,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 }
             }
 
-            // Pass 2: same-index fallback.
-            // The slot stayed at index i but its group reference changed (orphan filled /
-            // replaced with another group / cleared to null). Inherit the same-index setting
-            // so user edits are not silently dropped. New rows appended by "+" land here too
-            // but their before-side index is out of range, so they end up with null (placeholder).
+            // Pass 3: same-index fallback. The slot stayed at index i but its group reference
+            // changed (orphan filled / replaced with another group / cleared to null). Inherit
+            // the same-index setting if it has not been consumed by previous passes. New rows
+            // appended by "+" land here too but their before-side index is out of range, so
+            // they end up with null (placeholder).
             for (var i = 0; i < len; i++)
             {
                 if (matched[i]) continue;
