@@ -152,13 +152,24 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             {
                 var g = afterFromGroups[i];
                 Object setting = null;
+                var matched = false;
                 for (var idx = 0; idx < beforeFromGroups.Length; idx++)
                 {
                     if (consumed[idx]) continue;
                     if (beforeFromGroups[idx] != g) continue;
                     if (idx < beforeOverrides.Length) setting = beforeOverrides[idx];
                     consumed[idx] = true;
+                    matched = true;
                     break;
+                }
+                // Same-index slot kept its position but the group reference changed
+                // (orphan filled / replaced with another group). Preserve the existing
+                // override so the setting is not lost on edit.
+                if (!matched && g != null
+                    && i < beforeFromGroups.Length && !consumed[i])
+                {
+                    if (i < beforeOverrides.Length) setting = beforeOverrides[i];
+                    consumed[i] = true;
                 }
                 _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
             }
