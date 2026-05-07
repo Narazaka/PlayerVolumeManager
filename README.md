@@ -23,6 +23,7 @@ https://github.com/Narazaka/PlayerVolumeManager/releases/latest から `net.nara
 
 ## Changelog
 
+- 1.0.0-alpha.3: listen fromのインスペクタ改善
 - 1.0.0-alpha.2: (breaking) group指定場所を変更
 - 1.0.0-alpha.1: exampleシーン修正 / ベンチマーク追加
 - 1.0.0-alpha.0: リリース
