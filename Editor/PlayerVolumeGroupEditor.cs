@@ -144,14 +144,21 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         void ApplyReorderToOverrides(Object[] beforeFromGroups, Object[] beforeOverrides, Object[] afterFromGroups)
         {
             _listenOverrides.arraySize = afterFromGroups.Length;
+            // Match each "after" slot to a unique "before" slot. Duplicate references (same group
+            // appearing twice with different settings, or multiple null/orphan rows) keep their
+            // individual settings across reorders. New rows added by "+" simply get null override.
+            var consumed = new bool[beforeFromGroups.Length];
             for (var i = 0; i < afterFromGroups.Length; i++)
             {
                 var g = afterFromGroups[i];
                 Object setting = null;
-                if (g != null)
+                for (var idx = 0; idx < beforeFromGroups.Length; idx++)
                 {
-                    var idx = System.Array.IndexOf(beforeFromGroups, g);
-                    if (idx >= 0 && idx < beforeOverrides.Length) setting = beforeOverrides[idx];
+                    if (consumed[idx]) continue;
+                    if (beforeFromGroups[idx] != g) continue;
+                    if (idx < beforeOverrides.Length) setting = beforeOverrides[idx];
+                    consumed[idx] = true;
+                    break;
                 }
                 _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
             }
