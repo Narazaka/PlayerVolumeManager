@@ -258,16 +258,47 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         sealed class Labels
         {
-            public static GUIContent VoiceGain = new GUIContent("Gain");
-            public static GUIContent VoiceDistanceNear = new GUIContent("Near");
-            public static GUIContent VoiceDistanceFar = new GUIContent("Far");
-            public static GUIContent VoiceVolumetricRadius = new GUIContent("Volumetric Radius");
-            public static GUIContent VoiceLowPass = new GUIContent("Lowpass");
-            public static GUIContent AvatarAudioGain = new GUIContent("Gain");
-            public static GUIContent AvatarAudioDistanceNear = new GUIContent("Near");
-            public static GUIContent AvatarAudioDistanceFar = new GUIContent("Far");
-            public static GUIContent AvatarAudioVolumetricRadius = new GUIContent("Volumetric Radius");
-            public static GUIContent AvatarAudioForceSpatial = new GUIContent("Force Spatial");
+            public static GUIContent VoiceGain => T.Gain.GUIContent;
+            public static GUIContent VoiceDistanceNear => T.Near.GUIContent;
+            public static GUIContent VoiceDistanceFar => T.Far.GUIContent;
+            public static GUIContent VoiceVolumetricRadius => T.VolumetricRadius.GUIContent;
+            public static GUIContent VoiceLowPass => T.Lowpass.GUIContent;
+            public static GUIContent AvatarAudioGain => T.Gain.GUIContent;
+            public static GUIContent AvatarAudioDistanceNear => T.Near.GUIContent;
+            public static GUIContent AvatarAudioDistanceFar => T.Far.GUIContent;
+            public static GUIContent AvatarAudioVolumetricRadius => T.VolumetricRadius.GUIContent;
+            public static GUIContent AvatarAudioForceSpatial => T.ForceSpatial.GUIContent;
+        }
+
+        static class T
+        {
+            // 注: 音響パラメータの field 名は VRChat SDK のドキュメントとも揃え英語のまま (en/ja 同値)
+            public static readonly istring Gain = new istring("Gain", "Gain");
+            public static readonly istring Near = new istring("Near", "Near");
+            public static readonly istring Far = new istring("Far", "Far");
+            public static readonly istring VolumetricRadius = new istring("Volumetric Radius", "Volumetric Radius");
+            public static readonly istring Lowpass = new istring("Lowpass", "Lowpass");
+            public static readonly istring ForceSpatial = new istring("Force Spatial", "Force Spatial");
+
+            public static readonly istring PlayerVolumeHeader = new istring("Player Volume", "プレイヤー音量");
+            public static readonly istring AvatarAudioHeader = new istring("Avatar Audio", "アバター音声");
+
+            public static readonly istring FilterPrefix = new istring("(Filter)", "(フィルタ)");
+            public static readonly istring ModeFull = new istring("Full", "全表示");
+            public static readonly istring ModeCompact = new istring("Compact", "コンパクト");
+            public static readonly istring ModeFilter = new istring("Filter", "フィルタ");
+            public static istring ModeFilterWithCount(int count) => new istring($"Filter ({count})", $"フィルタ ({count})");
+
+            public static readonly istring MenuPlayerGain = new istring("Player > Gain", "プレイヤー > Gain");
+            public static readonly istring MenuPlayerNear = new istring("Player > Near", "プレイヤー > Near");
+            public static readonly istring MenuPlayerFar = new istring("Player > Far", "プレイヤー > Far");
+            public static readonly istring MenuPlayerVolumetricRadius = new istring("Player > Volumetric Radius", "プレイヤー > Volumetric Radius");
+            public static readonly istring MenuPlayerLowpass = new istring("Player > Lowpass", "プレイヤー > Lowpass");
+            public static readonly istring MenuAvatarGain = new istring("Avatar > Gain", "アバター > Gain");
+            public static readonly istring MenuAvatarNear = new istring("Avatar > Near", "アバター > Near");
+            public static readonly istring MenuAvatarFar = new istring("Avatar > Far", "アバター > Far");
+            public static readonly istring MenuAvatarVolumetricRadius = new istring("Avatar > Volumetric Radius", "アバター > Volumetric Radius");
+            public static readonly istring MenuAvatarForceSpatial = new istring("Avatar > Force Spatial", "アバター > Force Spatial");
         }
 
         // Static getters used to walk the fallback chain without per-call lambda allocations.
@@ -366,12 +397,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             so.FindProperty(valueName).boolValue = fallback ?? defaultValue;
         }
 
-        static readonly GUIContent ModeLabel = new GUIContent("(Filter)");
-
         public static void DrawModeDropdownLayout()
         {
             var rect = EditorGUILayout.GetControlRect();
-            var dropdownRect = EditorGUI.PrefixLabel(rect, ModeLabel);
+            var dropdownRect = EditorGUI.PrefixLabel(rect, T.FilterPrefix.GUIContent);
             var content = new GUIContent(GetCurrentModeLabel());
             if (EditorGUI.DropdownButton(dropdownRect, content, FocusType.Keyboard))
             {
@@ -386,13 +415,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var r = new Rect(rect.x, rect.y, rect.width, line);
             var fb = p.Fallback;
 
-            DrawHeader(r, "Player Volume"); r.y += step;
+            DrawHeader(r, T.PlayerVolumeHeader); r.y += step;
             DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain), FieldFlag.VoiceGain); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear), FieldFlag.VoiceDistanceNear); r.y += step;
             DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar, ResolveFloat(fb, GetVoiceDistanceFar), FieldFlag.VoiceDistanceFar); r.y += step;
             DrawFloat(r, Labels.VoiceVolumetricRadius, p.VoiceVolumetricRadius, DefaultVoiceVolumetricRadius, MaxVoiceVolumetricRadius, ResolveFloat(fb, GetVoiceVolumetricRadius), FieldFlag.VoiceVolumetricRadius); r.y += step;
             DrawBool(r, Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass, ResolveBool(fb, GetEnableVoiceLowpass, GetVoiceLowpass), FieldFlag.VoiceLowpass); r.y += step;
-            DrawHeader(r, "Avatar Audio"); r.y += step;
+            DrawHeader(r, T.AvatarAudioHeader); r.y += step;
             DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain), FieldFlag.AvatarAudioGain); r.y += step;
             DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear), FieldFlag.AvatarAudioDistanceNear); r.y += step;
             DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar, ResolveFloat(fb, GetAvatarAudioDistanceFar), FieldFlag.AvatarAudioDistanceFar); r.y += step;
@@ -409,7 +438,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var r = new Rect(rect.x, rect.y, rect.width, line);
             var fb = p.Fallback;
 
-            DrawHeader(r, "Player Volume"); r.y += step;
+            DrawHeader(r, T.PlayerVolumeHeader); r.y += step;
             var voiceCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
             DrawCompactFloat(voiceCols[0], Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain), FieldFlag.VoiceGain);
             DrawCompactFloat(voiceCols[1], Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear), FieldFlag.VoiceDistanceNear);
@@ -418,7 +447,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             DrawCompactBool(voiceCols[4], Labels.VoiceLowPass, p.VoiceLowpass, p.EnableVoiceLowpass, DefaultVoiceLowpass, ResolveBool(fb, GetEnableVoiceLowpass, GetVoiceLowpass), FieldFlag.VoiceLowpass);
             r.y += sectionHeight + spacing;
 
-            DrawHeader(r, "Avatar Audio"); r.y += step;
+            DrawHeader(r, T.AvatarAudioHeader); r.y += step;
             var avatarCols = SplitHorizontal(new Rect(r.x, r.y, r.width, sectionHeight), 5);
             DrawCompactFloat(avatarCols[0], Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain), FieldFlag.AvatarAudioGain);
             DrawCompactFloat(avatarCols[1], Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear), FieldFlag.AvatarAudioDistanceNear);
@@ -439,7 +468,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
             if (hasVoice)
             {
-                DrawHeader(r, "Player Volume"); r.y += step;
+                DrawHeader(r, T.PlayerVolumeHeader); r.y += step;
                 if ((mask & FieldFlag.VoiceGain) != 0) { DrawFloat(r, Labels.VoiceGain, p.VoiceGain, DefaultVoiceGain, MaxVoiceGain, ResolveFloat(fb, GetVoiceGain), FieldFlag.VoiceGain); r.y += step; }
                 if ((mask & FieldFlag.VoiceDistanceNear) != 0) { DrawFloat(r, Labels.VoiceDistanceNear, p.VoiceDistanceNear, DefaultVoiceDistanceNear, MaxVoiceDistanceNear, ResolveFloat(fb, GetVoiceDistanceNear), FieldFlag.VoiceDistanceNear); r.y += step; }
                 if ((mask & FieldFlag.VoiceDistanceFar) != 0) { DrawFloat(r, Labels.VoiceDistanceFar, p.VoiceDistanceFar, DefaultVoiceDistanceFar, MaxVoiceDistanceFar, ResolveFloat(fb, GetVoiceDistanceFar), FieldFlag.VoiceDistanceFar); r.y += step; }
@@ -448,7 +477,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
             if (hasAvatar)
             {
-                DrawHeader(r, "Avatar Audio"); r.y += step;
+                DrawHeader(r, T.AvatarAudioHeader); r.y += step;
                 if ((mask & FieldFlag.AvatarAudioGain) != 0) { DrawFloat(r, Labels.AvatarAudioGain, p.AvatarAudioGain, DefaultAvatarAudioGain, MaxAvatarAudioGain, ResolveFloat(fb, GetAvatarAudioGain), FieldFlag.AvatarAudioGain); r.y += step; }
                 if ((mask & FieldFlag.AvatarAudioDistanceNear) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceNear, p.AvatarAudioDistanceNear, DefaultAvatarAudioDistanceNear, MaxAvatarAudioDistanceNear, ResolveFloat(fb, GetAvatarAudioDistanceNear), FieldFlag.AvatarAudioDistanceNear); r.y += step; }
                 if ((mask & FieldFlag.AvatarAudioDistanceFar) != 0) { DrawFloat(r, Labels.AvatarAudioDistanceFar, p.AvatarAudioDistanceFar, DefaultAvatarAudioDistanceFar, MaxAvatarAudioDistanceFar, ResolveFloat(fb, GetAvatarAudioDistanceFar), FieldFlag.AvatarAudioDistanceFar); r.y += step; }
@@ -467,19 +496,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var menu = new GenericMenu();
             var mode = GetMode();
             var mask = GetFilterMask();
-            menu.AddItem(new GUIContent("Full"), mode == DisplayMode.Full, () => SetMode(DisplayMode.Full));
-            menu.AddItem(new GUIContent("Compact"), mode == DisplayMode.Compact, () => SetMode(DisplayMode.Compact));
+            menu.AddItem(T.ModeFull.GUIContent, mode == DisplayMode.Full, () => SetMode(DisplayMode.Full));
+            menu.AddItem(T.ModeCompact.GUIContent, mode == DisplayMode.Compact, () => SetMode(DisplayMode.Compact));
             menu.AddSeparator("");
-            AddFieldItem(menu, mode, mask, FieldFlag.VoiceGain, "Player > Gain");
-            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceNear, "Player > Near");
-            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceFar, "Player > Far");
-            AddFieldItem(menu, mode, mask, FieldFlag.VoiceVolumetricRadius, "Player > Volumetric Radius");
-            AddFieldItem(menu, mode, mask, FieldFlag.VoiceLowpass, "Player > Lowpass");
-            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioGain, "Avatar > Gain");
-            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceNear, "Avatar > Near");
-            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceFar, "Avatar > Far");
-            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioVolumetricRadius, "Avatar > Volumetric Radius");
-            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioForceSpatial, "Avatar > Force Spatial");
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceGain, T.MenuPlayerGain);
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceNear, T.MenuPlayerNear);
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceDistanceFar, T.MenuPlayerFar);
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceVolumetricRadius, T.MenuPlayerVolumetricRadius);
+            AddFieldItem(menu, mode, mask, FieldFlag.VoiceLowpass, T.MenuPlayerLowpass);
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioGain, T.MenuAvatarGain);
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceNear, T.MenuAvatarNear);
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioDistanceFar, T.MenuAvatarFar);
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioVolumetricRadius, T.MenuAvatarVolumetricRadius);
+            AddFieldItem(menu, mode, mask, FieldFlag.AvatarAudioForceSpatial, T.MenuAvatarForceSpatial);
             menu.DropDown(rect);
         }
 
@@ -507,14 +536,14 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         {
             switch (GetMode())
             {
-                case DisplayMode.Full: return "Full";
-                case DisplayMode.Compact: return "Compact";
+                case DisplayMode.Full: return T.ModeFull;
+                case DisplayMode.Compact: return T.ModeCompact;
                 default:
                     var mask = GetFilterMask();
                     var count = CountBits((int)mask);
-                    if (count == 0) return "Filter";
+                    if (count == 0) return T.ModeFilter;
                     if (count == 1) return GetSingleFieldLabel(mask);
-                    return $"Filter ({count})";
+                    return T.ModeFilterWithCount(count);
             }
         }
 
@@ -522,17 +551,17 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         {
             switch (flag)
             {
-                case FieldFlag.VoiceGain: return "Player > Gain";
-                case FieldFlag.VoiceDistanceNear: return "Player > Near";
-                case FieldFlag.VoiceDistanceFar: return "Player > Far";
-                case FieldFlag.VoiceVolumetricRadius: return "Player > Volumetric Radius";
-                case FieldFlag.VoiceLowpass: return "Player > Lowpass";
-                case FieldFlag.AvatarAudioGain: return "Avatar > Gain";
-                case FieldFlag.AvatarAudioDistanceNear: return "Avatar > Near";
-                case FieldFlag.AvatarAudioDistanceFar: return "Avatar > Far";
-                case FieldFlag.AvatarAudioVolumetricRadius: return "Avatar > Volumetric Radius";
-                case FieldFlag.AvatarAudioForceSpatial: return "Avatar > Force Spatial";
-                default: return "Filter";
+                case FieldFlag.VoiceGain: return T.MenuPlayerGain;
+                case FieldFlag.VoiceDistanceNear: return T.MenuPlayerNear;
+                case FieldFlag.VoiceDistanceFar: return T.MenuPlayerFar;
+                case FieldFlag.VoiceVolumetricRadius: return T.MenuPlayerVolumetricRadius;
+                case FieldFlag.VoiceLowpass: return T.MenuPlayerLowpass;
+                case FieldFlag.AvatarAudioGain: return T.MenuAvatarGain;
+                case FieldFlag.AvatarAudioDistanceNear: return T.MenuAvatarNear;
+                case FieldFlag.AvatarAudioDistanceFar: return T.MenuAvatarFar;
+                case FieldFlag.AvatarAudioVolumetricRadius: return T.MenuAvatarVolumetricRadius;
+                case FieldFlag.AvatarAudioForceSpatial: return T.MenuAvatarForceSpatial;
+                default: return T.ModeFilter;
             }
         }
 

@@ -21,6 +21,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             serializedObject.UpdateIfRequiredOrScript();
             DrawAll();
             serializedObject.ApplyModifiedProperties();
+            Language.DrawDropdownLayout();
         }
 
         protected void DrawAll()

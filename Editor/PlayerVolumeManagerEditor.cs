@@ -21,7 +21,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         {
             DrawGroups();
             DrawDebugLog();
-            DrawHeader("Listen Default");
+            DrawHeader(T.ListenDefault);
             using (new EditorGUI.IndentLevelScope())
             {
                 base.Draw();
@@ -67,7 +67,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             {
                 foreach (var groupName in needFallbackGroups)
                 {
-                    Add(prop, $"{groupName} の Listen Default");
+                    Add(prop, T.ListenDefaultOf(groupName));
                 }
             }
 
@@ -78,9 +78,21 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             {
                 sb.AppendLine($"  - {prop}: {string.Join(", ", propToReasons[prop])}");
             }
-            EditorGUILayout.HelpBox(
-                "以下の項目は設定の有無が揃っておらず、フォールバック値が決まらない箇所があります。Manager または下記の各箇所に値を設定してください:\n" + sb.ToString(),
-                MessageType.Warning);
+            EditorGUILayout.HelpBox(T.ManagerConsistencyHeader + sb.ToString(), MessageType.Warning);
+        }
+
+        static class T
+        {
+            public static readonly istring Groups = new istring("Groups", "グループ");
+            public static readonly istring DebugLog = new istring("Debug Log", "デバッグログ");
+            public static readonly istring DetectGroups = new istring("Detect Groups", "グループを検出");
+            public static readonly istring ListenDefault = new istring("Listen Default", "Listen 既定値");
+            public static readonly istring ManagerConsistencyHeader = new istring(
+                "Some fields have inconsistent settings, leaving the fallback value undefined. Set a value either in Manager or each of the locations below:\n",
+                "以下の項目は設定の有無が揃っておらず、フォールバック値が決まらない箇所があります。Manager または下記の各箇所に値を設定してください:\n");
+            public static istring ListenDefaultOf(string name) => new istring(
+                $"{name}'s Listen Default",
+                $"{name} の Listen 既定値");
         }
 
         protected override HashSet<string> KnownProperties
@@ -101,8 +113,8 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void DrawGroups()
         {
-            EditorGUILayout.PropertyField(_groups, true);
-            if (GUILayout.Button("Detect Groups"))
+            EditorGUILayout.PropertyField(_groups, T.Groups.GUIContent, true);
+            if (GUILayout.Button(T.DetectGroups))
             {
                 DetectGroups();
             }
@@ -110,7 +122,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void DrawDebugLog()
         {
-            EditorGUILayout.PropertyField(_debugLog);
+            EditorGUILayout.PropertyField(_debugLog, T.DebugLog.GUIContent);
         }
 
         void DetectGroups()

@@ -32,12 +32,14 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             DrawMisc();
             if (_matchWhenListener.boolValue)
             {
+                DrawHeader(T.ListenFromGroupOverride);
+                DrawDetectButton();
                 PlayerVolumeSettingGUI.DrawModeDropdownLayout();
                 DrawSortModeToggle();
 
                 DrawListenPairs();
 
-                DrawHeader("Listen Default");
+                DrawHeader(T.ListenDefault);
                 using (new EditorGUI.IndentLevelScope())
                 {
                     base.DrawVolumeSetting();
@@ -47,22 +49,31 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
         }
 
-        void DrawMisc()
+        void DrawDetectButton()
         {
-            EditorGUILayout.PropertyField(_matchWhenListener);
-            EditorGUILayout.PropertyField(_matchWhenSpeaker);
-            EditorGUILayout.PropertyField(_fallbackToNextGroup);
+            var owner = (PlayerVolumeGroup)target;
+            if (GUILayout.Button(T.Detect))
+            {
+                var pairs = owner.GetComponentsInChildren<PlayerVolumeListenPair>(true);
+                DetectPairs(owner, pairs, GetManagerGroups());
+            }
         }
 
-        static readonly GUIContent SortModeLabel = new GUIContent("(Sort)");
+        void DrawMisc()
+        {
+            EditorGUILayout.PropertyField(_matchWhenListener, T.MatchWhenListener.GUIContent);
+            EditorGUILayout.PropertyField(_matchWhenSpeaker, T.MatchWhenSpeaker.GUIContent);
+            EditorGUILayout.PropertyField(_fallbackToNextGroup, T.FallbackToNextGroup.GUIContent);
+        }
+
         void DrawSortModeToggle()
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.PrefixLabel(SortModeLabel);
+                EditorGUILayout.PrefixLabel(T.Sort.GUIContent);
                 var current = PlayerVolumeSettingGUI.GetPairSortMode();
-                var managerOn = GUILayout.Toggle(current == PlayerVolumeListenPairView.SortMode.ManagerOrder, "Manager", EditorStyles.miniButtonLeft);
-                var detectionOn = GUILayout.Toggle(current == PlayerVolumeListenPairView.SortMode.DetectionOrder, "Detection", EditorStyles.miniButtonRight);
+                var managerOn = GUILayout.Toggle(current == PlayerVolumeListenPairView.SortMode.ManagerOrder, T.SortModeManager, EditorStyles.miniButtonLeft);
+                var detectionOn = GUILayout.Toggle(current == PlayerVolumeListenPairView.SortMode.DetectionOrder, T.SortModeDetection, EditorStyles.miniButtonRight);
                 if (managerOn && current != PlayerVolumeListenPairView.SortMode.ManagerOrder)
                     PlayerVolumeSettingGUI.SetPairSortMode(PlayerVolumeListenPairView.SortMode.ManagerOrder);
                 else if (detectionOn && current != PlayerVolumeListenPairView.SortMode.DetectionOrder)
@@ -84,13 +95,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             }
             var view = PlayerVolumeListenPairView.Compute(items, managerGroups, PlayerVolumeSettingGUI.GetPairSortMode());
 
-            // Detect ボタン
-            if (GUILayout.Button("Detect"))
-            {
-                DetectPairs(owner, pairs, managerGroups);
-                return;
-            }
-
             // 各 Pair 行 (sort 結果順)
             foreach (var item in view)
             {
@@ -103,11 +107,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     DrawPairHeaderRow(pair, item, isSelf);
 
                     if (item.IsOrphan)
-                        EditorGUILayout.HelpBox("group が未設定です。", MessageType.Warning);
+                        EditorGUILayout.HelpBox(T.OrphanWarning, MessageType.Warning);
                     if (item.IsOutsideManager)
-                        EditorGUILayout.HelpBox("この group は Manager._groups に登録されていません。", MessageType.Warning);
+                        EditorGUILayout.HelpBox(T.OutsideWarning, MessageType.Warning);
                     if (item.IsDuplicate)
-                        EditorGUILayout.HelpBox("同じ group が複数の Pair に設定されています。", MessageType.Warning);
+                        EditorGUILayout.HelpBox(T.DuplicateWarning, MessageType.Warning);
 
                     var pairSerializedObject = GetOrCreatePairSerializedObject(pair);
                     pairSerializedObject.UpdateIfRequiredOrScript();
@@ -118,6 +122,45 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
             // 削除予定の cache 要素をクリーンアップ
             CleanupStalePairSerializedObjects(pairs);
+        }
+
+        static class T
+        {
+            public static readonly istring MatchWhenListener = new istring(
+                "Match When Listener", "リスナー時にマッチ",
+                "Considered when matching as listener (= local processing).",
+                "リスナーとしての判定時に考慮される（ローカルでの処理時に考慮される）");
+            public static readonly istring MatchWhenSpeaker = new istring(
+                "Match When Speaker", "スピーカー時にマッチ",
+                "Considered when matching as speaker (= remote processing).",
+                "スピーカーとしての判定時に考慮される（リモートでの処理時に考慮される）");
+            public static readonly istring FallbackToNextGroup = new istring(
+                "Fallback To Next Group", "次のグループにフォールバック",
+                "For items not overridden by this group, defer to the next group instead of the Manager.",
+                "このグループでオーバーライドされない項目を、Managerではなく次のグループにまかせる");
+
+            public static readonly istring ListenFromGroupOverride = new istring("Listen from Group Override", "グループ別 Listen オーバーライド");
+            public static readonly istring Detect = new istring("Detect", "検出");
+            public static readonly istring Sort = new istring("(Sort)", "(並び順)");
+            public static readonly istring SortModeManager = new istring("Manager", "Manager 順");
+            public static readonly istring SortModeDetection = new istring("Detection", "検出順");
+            public static readonly istring ListenDefault = new istring("Listen Default", "Listen 既定値");
+            public static readonly istring SelfBadge = new istring("Self", "Self");
+            public static readonly istring OrphanWarning = new istring(
+                "Group is not assigned.",
+                "group が未設定です。");
+            public static readonly istring OutsideWarning = new istring(
+                "This group is not registered in Manager._groups.",
+                "この group は Manager._groups に登録されていません。");
+            public static readonly istring DuplicateWarning = new istring(
+                "The same group is assigned to multiple Pairs.",
+                "同じ group が複数の Pair に設定されています。");
+            public static readonly istring SelfBadgeTooltip = new istring(
+                "This pair targets the owning group itself (= override applied when the group itself matches).",
+                "このグループ自身を override 対象にしています (= 自分が match したときに自身の値で上書き)");
+            public static readonly istring GroupConsistencyHeader = new istring(
+                "These fields have override values, but no fallback exists in this group's Listen Default or in the Manager:\n",
+                "以下の項目は override で値が設定されていますが、このグループの Listen 既定値にも Manager にもフォールバック値がありません:\n");
         }
 
         static readonly Color SelfBadgeColor = new Color(0.30f, 0.55f, 0.85f);
@@ -156,7 +199,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (isSelf)
-                    DrawBadge("Self", SelfBadgeColor, "このグループ自身を override 対象にしています (= 自分が match したときに自身の値で上書き)");
+                    DrawBadge(T.SelfBadge, SelfBadgeColor, T.SelfBadgeTooltip);
                 GUILayout.Label(pair.gameObject.name, EditorStyles.boldLabel);
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("×", GUILayout.Width(24)))
@@ -239,9 +282,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             if (missing.Count == 0) return;
             var sb = new System.Text.StringBuilder();
             foreach (var name in missing) sb.AppendLine($"  - {name}");
-            EditorGUILayout.HelpBox(
-                "以下の項目は override で値が設定されていますが、このグループの Listen Default にも Manager にもフォールバック値がありません:\n" + sb.ToString(),
-                MessageType.Warning);
+            EditorGUILayout.HelpBox(T.GroupConsistencyHeader + sb.ToString(), MessageType.Warning);
         }
 
         private protected override PlayerVolumeSettingGUI.Properties BuildFallback() =>

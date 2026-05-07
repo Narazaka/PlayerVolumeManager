@@ -8,6 +8,12 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
     [CustomEditor(typeof(PlayerVolumeListenPair))]
     public class PlayerVolumeListenPairEditor : UnityEditor.Editor
     {
+        static class T
+        {
+            public static readonly istring Group = new istring("Group", "グループ");
+            public static readonly istring Setting = new istring("Setting", "設定");
+        }
+
         public override void OnInspectorGUI()
         {
             if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(target)) return;
@@ -51,7 +57,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
             using (var check = new EditorGUI.ChangeCheckScope())
             {
-                EditorGUILayout.PropertyField(groupProp);
+                EditorGUILayout.PropertyField(groupProp, T.Group.GUIContent);
                 if (check.changed)
                 {
                     pairSerializedObject.ApplyModifiedProperties();
@@ -65,7 +71,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 }
             }
 
-            EditorGUILayout.PropertyField(settingProp);
+            EditorGUILayout.PropertyField(settingProp, T.Setting.GUIContent);
 
             var bodyRect = EditorGUILayout.GetControlRect(false, PlayerVolumeSettingGUI.GetHeight());
 
