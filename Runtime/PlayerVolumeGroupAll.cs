@@ -5,7 +5,7 @@ using VRC.Udon;
 
 namespace Narazaka.VRChat.PlayerVolumeManager
 {
-    [AddComponentMenu("PlayerVolumeManager/PlayerVolumeGroup (All)")]
+    [AddComponentMenu("PlayerVolumeManager/Player Volume Group (All)")]
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class PlayerVolumeGroupAll : PlayerVolumeGroup
     {

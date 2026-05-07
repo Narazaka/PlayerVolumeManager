@@ -6,6 +6,7 @@ using System;
 
 namespace Narazaka.VRChat.PlayerVolumeManager
 {
+    [AddComponentMenu("PlayerVolumeManager/Player Volume Manager")]
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class PlayerVolumeManager : PlayerVolumeSetting
     {
