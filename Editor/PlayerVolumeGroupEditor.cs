@@ -40,24 +40,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
                 DrawConsistencyWarning();
             }
-
-            SyncOverrideArrays();
-        }
-
-        void SyncOverrideArrays()
-        {
-            // Keep _listenOverrides aligned with _listenFromGroups in size.
-            while (_listenOverrides.arraySize < _listenFromGroups.arraySize)
-            {
-                _listenOverrides.InsertArrayElementAtIndex(_listenOverrides.arraySize);
-                _listenOverrides.GetArrayElementAtIndex(_listenOverrides.arraySize - 1).objectReferenceValue = null;
-            }
-            while (_listenOverrides.arraySize > _listenFromGroups.arraySize)
-            {
-                var i = _listenOverrides.arraySize - 1;
-                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
-                _listenOverrides.DeleteArrayElementAtIndex(i);
-            }
         }
 
         void DrawConsistencyWarning()
@@ -143,35 +125,47 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void ApplyReorderToOverrides(Object[] beforeFromGroups, Object[] beforeOverrides, Object[] afterFromGroups)
         {
-            _listenOverrides.arraySize = afterFromGroups.Length;
-            // Match each "after" slot to a unique "before" slot. Duplicate references (same group
-            // appearing twice with different settings, or multiple null/orphan rows) keep their
-            // individual settings across reorders. New rows added by "+" simply get null override.
+            var len = afterFromGroups.Length;
+            _listenOverrides.arraySize = len;
             var consumed = new bool[beforeFromGroups.Length];
-            for (var i = 0; i < afterFromGroups.Length; i++)
+            var matched = new bool[len];
+            var settings = new Object[len];
+
+            // Pass 1: same-group reorder.
+            // Each after slot consumes a unique before slot whose group matches. Duplicate group
+            // references and multiple null/orphan rows are handled because slots are consumed
+            // first-come-first-served instead of always falling back to the first IndexOf.
+            for (var i = 0; i < len; i++)
             {
                 var g = afterFromGroups[i];
-                Object setting = null;
-                var matched = false;
                 for (var idx = 0; idx < beforeFromGroups.Length; idx++)
                 {
                     if (consumed[idx]) continue;
                     if (beforeFromGroups[idx] != g) continue;
-                    if (idx < beforeOverrides.Length) setting = beforeOverrides[idx];
+                    if (idx < beforeOverrides.Length) settings[i] = beforeOverrides[idx];
                     consumed[idx] = true;
-                    matched = true;
+                    matched[i] = true;
                     break;
                 }
-                // Same-index slot kept its position but the group reference changed
-                // (orphan filled / replaced with another group). Preserve the existing
-                // override so the setting is not lost on edit.
-                if (!matched && g != null
-                    && i < beforeFromGroups.Length && !consumed[i])
-                {
-                    if (i < beforeOverrides.Length) setting = beforeOverrides[i];
-                    consumed[i] = true;
-                }
-                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
+            }
+
+            // Pass 2: same-index fallback.
+            // The slot stayed at index i but its group reference changed (orphan filled /
+            // replaced with another group / cleared to null). Inherit the same-index setting
+            // so user edits are not silently dropped. New rows appended by "+" land here too
+            // but their before-side index is out of range, so they end up with null (placeholder).
+            for (var i = 0; i < len; i++)
+            {
+                if (matched[i]) continue;
+                if (i >= beforeFromGroups.Length || consumed[i]) continue;
+                if (i < beforeOverrides.Length) settings[i] = beforeOverrides[i];
+                consumed[i] = true;
+            }
+
+            // Apply
+            for (var i = 0; i < len; i++)
+            {
+                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = settings[i];
             }
         }
 
