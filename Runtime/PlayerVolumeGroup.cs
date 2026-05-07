@@ -14,9 +14,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         public bool _matchWhenSpeaker = true;
         [Tooltip("このグループでオーバーライドされない項目を、Managerではなく次のグループにまかせる")]
         public bool _fallbackToNextGroup;
+
         [InlinePlayerVolumeSettingByGroup]
+        public PlayerVolumeGroup[] _listenFromGroups = new PlayerVolumeGroup[0];
         public PlayerVolumeSettingByGroup[] _listenOverrides = new PlayerVolumeSettingByGroup[0];
-        PlayerVolumeGroup[] froms;
 
         public virtual bool _ContainsPlayer(VRCPlayerApi player)
         {
@@ -26,27 +27,23 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         protected virtual void OnEnable()
         {
-            var len = _listenOverrides.Length;
-            froms = new PlayerVolumeGroup[len];
-            for (var i = 0; i < len; i++)
-            {
-                froms[i] = _listenOverrides[i] == null ? null : _listenOverrides[i]._from;
-            }
         }
 
         public bool[] _ApplyVolumesWithOverride(PlayerVolumeSetting parent, VRCPlayerApi player, PlayerVolumeGroup[] fromGroups, bool[] set)
         {
             if (fromGroups == null || fromGroups.Length == 0)
             {
-                return _ApplyVolumes(player, new PlayerVolumeSetting[] {this, parent}, set);
+                return _ApplyVolumes(player, new PlayerVolumeSetting[] { this, parent }, set);
             }
 
             var len = fromGroups.Length;
             var settings = new PlayerVolumeSetting[len + 2];
             for (var i = 0; i < len; i++)
             {
-                var settingIndex = Array.IndexOf(froms, fromGroups[i]);
-                settings[i] = settingIndex == -1 ? (PlayerVolumeSetting)this : (PlayerVolumeSetting)_listenOverrides[settingIndex];
+                var settingIndex = Array.IndexOf(_listenFromGroups, fromGroups[i]);
+                settings[i] = settingIndex == -1 || _listenOverrides[settingIndex] == null
+                    ? (PlayerVolumeSetting)this
+                    : (PlayerVolumeSetting)_listenOverrides[settingIndex];
             }
             settings[len] = this;
             settings[len + 1] = parent;

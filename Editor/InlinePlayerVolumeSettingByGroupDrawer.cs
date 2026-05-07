@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,19 +11,17 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         sealed class Entry
         {
             public SerializedObject SerializedObject;
-            public SerializedProperty Group;
             public PlayerVolumeSettingGUI.Properties Properties;
         }
 
         static readonly Dictionary<int, Entry> _cache = new Dictionary<int, Entry>();
+        static readonly Regex _arrayIndexRegex = new Regex(@"\.Array\.data\[(\d+)\]$");
 
-        static GUIContent FoldoutLabel(PlayerVolumeSettingByGroup target, SerializedProperty property, GUIContent fallback)
+        static GUIContent FoldoutLabel(PlayerVolumeGroup fromGroup, SerializedProperty property, GUIContent fallback)
         {
-            if (target == null) return fallback;
-            var group = target._from;
-            if (group == null) return fallback;
+            if (fromGroup == null) return fallback;
             var owner = property.serializedObject.targetObject as PlayerVolumeGroup;
-            var text = group == owner ? "(Same Group)" : group.name;
+            var text = fromGroup == owner ? "(Same Group)" : fromGroup.name;
             return new GUIContent(text, fallback.tooltip);
         }
 
@@ -39,12 +38,19 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             entry = new Entry
             {
                 SerializedObject = so,
-                Group = so.FindProperty(nameof(PlayerVolumeSettingByGroup._from)),
                 Properties = PlayerVolumeSettingGUI.Properties.Create(so),
             };
             _cache[id] = entry;
             return entry;
         }
+
+        static int ExtractArrayIndex(string propertyPath)
+        {
+            var m = _arrayIndexRegex.Match(propertyPath);
+            return m.Success ? int.Parse(m.Groups[1].Value) : -1;
+        }
+
+        static readonly GUIContent OverrideLabel = new GUIContent("Override");
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -55,7 +61,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             var line = EditorGUIUtility.singleLineHeight;
             if (!property.isExpanded || property.objectReferenceValue == null) return line;
             var spacing = EditorGUIUtility.standardVerticalSpacing;
-            // header line + group line + body
+            // header line + setting line + body
             return line + spacing + line + spacing + PlayerVolumeSettingGUI.GetHeight();
         }
 
@@ -78,43 +84,78 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 var objectRect = headerRect;
                 objectRect.xMin = headerRect.x + EditorGUIUtility.labelWidth;
 
-                var target = property.objectReferenceValue as PlayerVolumeSettingByGroup;
-                using (new EditorGUI.DisabledScope(target == null))
+                var fromGroup = property.objectReferenceValue as PlayerVolumeGroup;
+                using (new EditorGUI.DisabledScope(fromGroup == null))
                 {
-                    var expanded = property.isExpanded && target != null;
-                    var newExpanded = EditorGUI.Foldout(foldoutRect, expanded, FoldoutLabel(target, property, label), true);
+                    var expanded = property.isExpanded && fromGroup != null;
+                    var newExpanded = EditorGUI.Foldout(foldoutRect, expanded, FoldoutLabel(fromGroup, property, label), true);
                     if (newExpanded != expanded) property.isExpanded = newExpanded;
                 }
 
-                EditorGUI.ObjectField(objectRect, property, typeof(PlayerVolumeSettingByGroup), GUIContent.none);
+                EditorGUI.ObjectField(objectRect, property, typeof(PlayerVolumeGroup), GUIContent.none);
 
-                if (target == null || !property.isExpanded) return;
+                if (fromGroup == null || !property.isExpanded) return;
+
+                var index = ExtractArrayIndex(property.propertyPath);
+                if (index < 0) return;
+
+                var ownerSO = property.serializedObject;
+                var listenOverridesProp = ownerSO.FindProperty(nameof(PlayerVolumeGroup._listenOverrides));
+                if (listenOverridesProp == null) return;
+                while (listenOverridesProp.arraySize <= index)
+                {
+                    listenOverridesProp.InsertArrayElementAtIndex(listenOverridesProp.arraySize);
+                    listenOverridesProp.GetArrayElementAtIndex(listenOverridesProp.arraySize - 1).objectReferenceValue = null;
+                }
+                var settingProp = listenOverridesProp.GetArrayElementAtIndex(index);
+
+                var settingRect = new Rect(position.x, headerRect.yMax + spacing, position.width, line);
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    EditorGUI.PropertyField(settingRect, settingProp, OverrideLabel);
+                }
+                var setting = settingProp.objectReferenceValue as PlayerVolumeSettingByGroup;
+
+                var bodyRect = new Rect(
+                    position.x,
+                    settingRect.yMax + spacing,
+                    position.width,
+                    PlayerVolumeSettingGUI.GetHeight());
+
+                var groupProperties = PlayerVolumeSettingGUI.Properties.Create(ownerSO);
+                groupProperties.Fallback = PlayerVolumeSettingGUI.GetManagerFallbackProperties();
 
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    var entry = GetEntry(target);
-                    entry.SerializedObject.UpdateIfRequiredOrScript();
+                    if (setting == null)
+                    {
+                        var placeholder = new PlayerVolumeSettingGUI.Properties { Fallback = groupProperties };
+                        PlayerVolumeSettingGUI.Draw(bodyRect, placeholder);
+                        var activated = PlayerVolumeSettingGUI.ConsumePlaceholderActivated();
+                        if (activated != PlayerVolumeSettingGUI.FieldFlag.None)
+                        {
+                            var owner = ownerSO.targetObject as PlayerVolumeGroup;
+                            var newSetting = PlayerVolumeSettingGUI.CreateListenOverrideSetting(owner, fromGroup);
+                            settingProp.objectReferenceValue = newSetting;
+                            ownerSO.ApplyModifiedProperties();
 
-                    var groupRect = new Rect(position.x, position.y + line + spacing, position.width, line);
-                    EditorGUI.PropertyField(groupRect, entry.Group);
-
-                    // fallback: parent (PlayerVolumeGroup)
-                    var groupProperties = PlayerVolumeSettingGUI.Properties.Create(property.serializedObject);
-                    // fallback.fallback: parent/parent (PlayerVolumeManager)
-                    groupProperties.Fallback = PlayerVolumeSettingGUI.GetManagerFallbackProperties();
-                    entry.Properties.Fallback = groupProperties;
-
-                    var bodyRect = new Rect(
-                        position.x,
-                        groupRect.yMax + spacing,
-                        position.width,
-                        PlayerVolumeSettingGUI.GetHeight());
-                    PlayerVolumeSettingGUI.Draw(bodyRect, entry.Properties);
-
-                    entry.SerializedObject.ApplyModifiedProperties();
-                    entry.Properties.Fallback = null;
+                            var settingSO = new SerializedObject(newSetting);
+                            PlayerVolumeSettingGUI.ApplyActivatedFields(settingSO, activated, groupProperties);
+                            settingSO.ApplyModifiedProperties();
+                        }
+                    }
+                    else
+                    {
+                        var entry = GetEntry(setting);
+                        entry.SerializedObject.UpdateIfRequiredOrScript();
+                        entry.Properties.Fallback = groupProperties;
+                        PlayerVolumeSettingGUI.Draw(bodyRect, entry.Properties);
+                        entry.SerializedObject.ApplyModifiedProperties();
+                        entry.Properties.Fallback = null;
+                    }
                 }
             }
         }
+
     }
 }

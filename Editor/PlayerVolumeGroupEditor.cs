@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,11 +7,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
     [CustomEditor(typeof(PlayerVolumeGroup), true)]
     public class PlayerVolumeGroupEditor : PlayerVolumeSettingEditor
     {
-        const string ListenOverridesParentName = "ListenOverrides";
-
         SerializedProperty _matchWhenListener;
         SerializedProperty _matchWhenSpeaker;
         SerializedProperty _fallbackToNextGroup;
+        SerializedProperty _listenFromGroups;
         SerializedProperty _listenOverrides;
 
         protected override void OnEnable()
@@ -20,13 +18,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             base.OnEnable();
             _matchWhenListener = serializedObject.FindProperty(nameof(PlayerVolumeGroup._matchWhenListener));
             _matchWhenSpeaker = serializedObject.FindProperty(nameof(PlayerVolumeGroup._matchWhenSpeaker));
-            _listenOverrides = serializedObject.FindProperty(nameof(PlayerVolumeGroup._listenOverrides));
             _fallbackToNextGroup = serializedObject.FindProperty(nameof(PlayerVolumeGroup._fallbackToNextGroup));
+            _listenFromGroups = serializedObject.FindProperty(nameof(PlayerVolumeGroup._listenFromGroups));
+            _listenOverrides = serializedObject.FindProperty(nameof(PlayerVolumeGroup._listenOverrides));
         }
 
         public override void Draw()
         {
-
             DrawMisc();
             if (_matchWhenListener.boolValue)
             {
@@ -41,6 +39,39 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 }
 
                 DrawConsistencyWarning();
+            }
+
+            SyncOverrideArrays();
+        }
+
+        void SyncOverrideArrays()
+        {
+            // Drop entries whose group reference became null.
+            for (var i = _listenFromGroups.arraySize - 1; i >= 0; i--)
+            {
+                if (_listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue == null)
+                {
+                    _listenFromGroups.DeleteArrayElementAtIndex(i);
+                    if (i < _listenOverrides.arraySize)
+                    {
+                        // Clear before delete so the underlying setting object is not destroyed by Unity.
+                        _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
+                        _listenOverrides.DeleteArrayElementAtIndex(i);
+                    }
+                }
+            }
+
+            // Keep _listenOverrides aligned with _listenFromGroups in size.
+            while (_listenOverrides.arraySize < _listenFromGroups.arraySize)
+            {
+                _listenOverrides.InsertArrayElementAtIndex(_listenOverrides.arraySize);
+                _listenOverrides.GetArrayElementAtIndex(_listenOverrides.arraySize - 1).objectReferenceValue = null;
+            }
+            while (_listenOverrides.arraySize > _listenFromGroups.arraySize)
+            {
+                var i = _listenOverrides.arraySize - 1;
+                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
+                _listenOverrides.DeleteArrayElementAtIndex(i);
             }
         }
 
@@ -68,6 +99,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                     _knownProperties.Add(nameof(PlayerVolumeGroup._matchWhenListener));
                     _knownProperties.Add(nameof(PlayerVolumeGroup._matchWhenSpeaker));
                     _knownProperties.Add(nameof(PlayerVolumeGroup._fallbackToNextGroup));
+                    _knownProperties.Add(nameof(PlayerVolumeGroup._listenFromGroups));
                     _knownProperties.Add(nameof(PlayerVolumeGroup._listenOverrides));
                 }
                 return _knownProperties;
@@ -85,99 +117,132 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void DrawOverrides()
         {
-            EditorGUILayout.PropertyField(_listenOverrides, true);
+            // Snapshot before user interaction so we can detect reorder.
+            var beforeFromGroups = SnapshotObjectArray(_listenFromGroups);
+            var beforeOverrides = SnapshotObjectArray(_listenOverrides);
+
+            EditorGUILayout.PropertyField(_listenFromGroups, true);
             if (GUILayout.Button("Fill Overrides"))
             {
                 FillOverrides();
+                return;
+            }
+
+            var afterFromGroups = SnapshotObjectArray(_listenFromGroups);
+            if (!SequenceEqual(beforeFromGroups, afterFromGroups))
+            {
+                ApplyReorderToOverrides(beforeFromGroups, beforeOverrides, afterFromGroups);
+            }
+        }
+
+        static Object[] SnapshotObjectArray(SerializedProperty arrayProp)
+        {
+            var n = arrayProp.arraySize;
+            var result = new Object[n];
+            for (var i = 0; i < n; i++)
+            {
+                result[i] = arrayProp.GetArrayElementAtIndex(i).objectReferenceValue;
+            }
+            return result;
+        }
+
+        static bool SequenceEqual(Object[] a, Object[] b)
+        {
+            if (a.Length != b.Length) return false;
+            for (var i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return false;
+            }
+            return true;
+        }
+
+        void ApplyReorderToOverrides(Object[] beforeFromGroups, Object[] beforeOverrides, Object[] afterFromGroups)
+        {
+            _listenOverrides.arraySize = afterFromGroups.Length;
+            for (var i = 0; i < afterFromGroups.Length; i++)
+            {
+                var g = afterFromGroups[i];
+                Object setting = null;
+                if (g != null)
+                {
+                    var idx = System.Array.IndexOf(beforeFromGroups, g);
+                    if (idx >= 0 && idx < beforeOverrides.Length) setting = beforeOverrides[idx];
+                }
+                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
             }
         }
 
         void FillOverrides()
         {
-            var foundSettings = (target as PlayerVolumeGroup).GetComponentsInChildren<PlayerVolumeSettingByGroup>();
+            var ownerGroup = target as PlayerVolumeGroup;
 
-            var foundGroups = FindObjectsByType<PlayerVolumeGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            var existingGroups = new HashSet<PlayerVolumeGroup>();
-            var noGroupSettings = new List<int>();
-            var noGroupSettingExists = false;
-            for (var i = 0; i < _listenOverrides.arraySize; i++)
+            // Pick up existing settings under ListenOverrides parent (by GameObject name).
+            var existingSettings = new Dictionary<string, PlayerVolumeSettingByGroup>();
+            var overridesParent = ownerGroup.transform.Find(PlayerVolumeSettingGUI.ListenOverridesParentName);
+            if (overridesParent != null)
             {
-                var s = _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup;
-                if (s != null)
+                foreach (Transform child in overridesParent)
                 {
-                    if (s._from != null)
+                    var s = child.GetComponent<PlayerVolumeSettingByGroup>();
+                    if (s != null) existingSettings[child.name] = s;
+                }
+            }
+
+            // Snapshot current (group -> setting) mapping.
+            var currentMap = new Dictionary<PlayerVolumeGroup, PlayerVolumeSettingByGroup>();
+            for (var i = 0; i < _listenFromGroups.arraySize; i++)
+            {
+                var g = _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
+                if (g == null) continue;
+                var s = i < _listenOverrides.arraySize
+                    ? _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeSettingByGroup
+                    : null;
+                if (s == null) existingSettings.TryGetValue(g.name, out s);
+                currentMap[g] = s;
+            }
+
+            // Decide ordering: prefer Manager._groups order, then leftovers.
+            var orderedGroups = new List<PlayerVolumeGroup>();
+            var manager = PlayerVolumeSettingGUI.GetManager();
+            if (manager != null)
+            {
+                var managerSO = new SerializedObject(manager);
+                var managerGroupsProp = managerSO.FindProperty("_groups");
+                if (managerGroupsProp != null)
+                {
+                    for (var i = 0; i < managerGroupsProp.arraySize; i++)
                     {
-                        existingGroups.Add(s._from);
-                        if (s.name != s._from.name)
-                        {
-                            Undo.RecordObject(s.gameObject, "Adjust Setting name");
-                            s.gameObject.name = s._from.name;
-                        }
-                    }
-                    else
-                    {
-                        noGroupSettings.Add(i);
-                        noGroupSettingExists = true;
+                        var g = managerGroupsProp.GetArrayElementAtIndex(i).objectReferenceValue as PlayerVolumeGroup;
+                        if (g != null && !orderedGroups.Contains(g)) orderedGroups.Add(g);
                     }
                 }
-                else
+            }
+            else
+            {
+                foreach (var g in FindObjectsByType<PlayerVolumeGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 {
-                    noGroupSettings.Add(i);
+                    if (g != null && !orderedGroups.Contains(g)) orderedGroups.Add(g);
                 }
             }
-
-            bool destroySettingObjects = false;
-
-            if (noGroupSettingExists)
+            // Append entries that exist in current registration but not in Manager (preserve user data).
+            foreach (var kv in currentMap)
             {
-                destroySettingObjects = EditorUtility.DisplayDialog(
-                    "Fill Overrides",
-                    "Some settings in the overrides do not have a group assigned. Do you want to delete these settings?",
-                    "Yes",
-                    "No"
-                    );
+                if (!orderedGroups.Contains(kv.Key)) orderedGroups.Add(kv.Key);
             }
 
-            noGroupSettings.Reverse();
-            foreach (var index in noGroupSettings)
+            // Write back arrays in the new order.
+            _listenFromGroups.arraySize = orderedGroups.Count;
+            _listenOverrides.arraySize = orderedGroups.Count;
+            for (var i = 0; i < orderedGroups.Count; i++)
             {
-                var s = _listenOverrides.GetArrayElementAtIndex(index).objectReferenceValue as PlayerVolumeSettingByGroup;
-                _listenOverrides.DeleteArrayElementAtIndex(index);
-                if (s != null && destroySettingObjects)
+                var g = orderedGroups[i];
+                _listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue = g;
+                if (!currentMap.TryGetValue(g, out var setting))
                 {
-                    Undo.DestroyObjectImmediate(s.gameObject);
+                    existingSettings.TryGetValue(g.name, out setting);
                 }
+                _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = setting;
             }
-
-            var newGroups = new HashSet<PlayerVolumeGroup>(foundGroups);
-            newGroups.ExceptWith(existingGroups);
-            foreach (var group in newGroups)
-            {
-                var setting = foundSettings.FirstOrDefault(s => s._from == group);
-                if (setting == null)
-                {
-                    setting = CreateSetting(group);
-                }
-                _listenOverrides.InsertArrayElementAtIndex(_listenOverrides.arraySize);
-                _listenOverrides.GetArrayElementAtIndex(_listenOverrides.arraySize - 1).objectReferenceValue = setting;
-            }
-        }
-
-        PlayerVolumeSettingByGroup CreateSetting(PlayerVolumeGroup group)
-        {
-            var root = (target as PlayerVolumeGroup).transform;
-            var parent = root.Find(ListenOverridesParentName);
-            if (parent == null)
-            {
-                parent = new GameObject(ListenOverridesParentName).transform;
-                parent.SetParent(root, false);
-                Undo.RegisterCreatedObjectUndo(parent.gameObject, "Create Listen Overrides Parent");
-            }
-            var setting = new GameObject(group.name).AddComponent<PlayerVolumeSettingByGroup>();
-            setting._from = group;
-            setting.transform.SetParent(parent, false);
-            Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Listen Override Setting");
-            return setting;
         }
     }
 }

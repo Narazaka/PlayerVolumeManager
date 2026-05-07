@@ -809,19 +809,19 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: _listenOverrides
+      Data: _listenFromGroups
     - Name: $v
       Entry: 7
       Data: 37|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: _listenOverrides
+      Data: _listenFromGroups
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 38|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeSettingByGroup[], Narazaka.VRChat.PlayerVolumeManager
+      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeGroup[], Narazaka.VRChat.PlayerVolumeManager
     - Name: 
       Entry: 8
       Data: 
@@ -869,19 +869,19 @@ MonoBehaviour:
       Data: 
     - Name: $k
       Entry: 1
-      Data: froms
+      Data: _listenOverrides
     - Name: $v
       Entry: 7
       Data: 41|UdonSharp.Compiler.FieldDefinition, UdonSharp.Editor
     - Name: <Name>k__BackingField
       Entry: 1
-      Data: froms
+      Data: _listenOverrides
     - Name: <UserType>k__BackingField
       Entry: 7
       Data: 42|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeGroup[], Narazaka.VRChat.PlayerVolumeManager
+      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeSettingByGroup[], Narazaka.VRChat.PlayerVolumeManager
     - Name: 
       Entry: 8
       Data: 
@@ -899,7 +899,7 @@ MonoBehaviour:
       Data: 
     - Name: <IsSerialized>k__BackingField
       Entry: 5
-      Data: false
+      Data: true
     - Name: _fieldAttributes
       Entry: 7
       Data: 43|System.Collections.Generic.List`1[[System.Attribute, mscorlib]], mscorlib

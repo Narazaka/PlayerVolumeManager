@@ -322,7 +322,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 1646326985}
 --- !u!1 &398442342
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,7 +415,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 7991107238418929860}
 --- !u!1 &413322603
 GameObject:
   m_ObjectHideFlags: 0
@@ -510,7 +508,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 1646326985}
 --- !u!1 &456380287
 GameObject:
   m_ObjectHideFlags: 0
@@ -604,7 +601,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 2552279737936396492}
 --- !u!1 &484040457
 GameObject:
   m_ObjectHideFlags: 0
@@ -657,7 +653,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 550442194}
 --- !u!114 &484040459
 MonoBehaviour:
   m_ObjectHideFlags: 2
@@ -792,7 +787,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 2552279737936396492}
 --- !u!1001 &550442193
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -914,6 +908,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
+      propertyPath: _listenFromGroups.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
       propertyPath: _listenOverrides.Array.data[0]
       value: 
       objectReference: {fileID: 994252568}
@@ -921,17 +920,37 @@ PrefabInstance:
         type: 3}
       propertyPath: _listenOverrides.Array.data[1]
       value: 
-      objectReference: {fileID: 1156069858}
+      objectReference: {fileID: 809323534}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: _listenOverrides.Array.data[2]
       value: 
-      objectReference: {fileID: 809323534}
+      objectReference: {fileID: 484040458}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: _listenOverrides.Array.data[3]
       value: 
-      objectReference: {fileID: 484040458}
+      objectReference: {fileID: 1156069858}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[0]
+      value: 
+      objectReference: {fileID: 7991107238418929860}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[1]
+      value: 
+      objectReference: {fileID: 1646326985}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[2]
+      value: 
+      objectReference: {fileID: 550442194}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[3]
+      value: 
+      objectReference: {fileID: 2552279737936396492}
     - target: {fileID: 8787327842960417475, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: m_Name
@@ -1091,7 +1110,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 1646326985}
 --- !u!1 &994252565
 GameObject:
   m_ObjectHideFlags: 0
@@ -1185,7 +1203,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 7991107238418929860}
 --- !u!1 &1015175006
 GameObject:
   m_ObjectHideFlags: 0
@@ -1279,7 +1296,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 550442194}
 --- !u!1 &1156069855
 GameObject:
   m_ObjectHideFlags: 0
@@ -1373,7 +1389,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 2552279737936396492}
 --- !u!1 &1395194854
 GameObject:
   m_ObjectHideFlags: 0
@@ -1520,7 +1535,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 550442194}
 --- !u!114 &1519797776
 MonoBehaviour:
   m_ObjectHideFlags: 2
@@ -1784,6 +1798,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
+      propertyPath: _listenFromGroups.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
       propertyPath: _listenOverrides.Array.data[0]
       value: 
       objectReference: {fileID: 2108695195}
@@ -1791,17 +1810,37 @@ PrefabInstance:
         type: 3}
       propertyPath: _listenOverrides.Array.data[1]
       value: 
-      objectReference: {fileID: 486615512}
+      objectReference: {fileID: 413322606}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: _listenOverrides.Array.data[2]
       value: 
-      objectReference: {fileID: 413322606}
+      objectReference: {fileID: 1015175009}
     - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: _listenOverrides.Array.data[3]
       value: 
-      objectReference: {fileID: 1015175009}
+      objectReference: {fileID: 486615512}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[0]
+      value: 
+      objectReference: {fileID: 7991107238418929860}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[1]
+      value: 
+      objectReference: {fileID: 1646326985}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[2]
+      value: 
+      objectReference: {fileID: 550442194}
+    - target: {fileID: 3703893664496581436, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[3]
+      value: 
+      objectReference: {fileID: 2552279737936396492}
     - target: {fileID: 8787327842960417475, guid: bfa6424cfc98a0e4f8f19e0e03d7b6bf,
         type: 3}
       propertyPath: m_Name
@@ -3084,7 +3123,6 @@ MonoBehaviour:
   _avatarAudioVolumetricRadius: -1
   _enableAvatarAudioForceSpatial: 0
   _avatarAudioForceSpatial: 0
-  _from: {fileID: 7991107238418929860}
 --- !u!1001 &2552279737936396491
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3131,6 +3169,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
         type: 3}
+      propertyPath: _listenFromGroups.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
+        type: 3}
       propertyPath: _listenOverrides.Array.data[0]
       value: 
       objectReference: {fileID: 398442345}
@@ -3138,17 +3181,37 @@ PrefabInstance:
         type: 3}
       propertyPath: _listenOverrides.Array.data[1]
       value: 
-      objectReference: {fileID: 456380290}
+      objectReference: {fileID: 267267466}
     - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
         type: 3}
       propertyPath: _listenOverrides.Array.data[2]
       value: 
-      objectReference: {fileID: 267267466}
+      objectReference: {fileID: 1519797775}
     - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
         type: 3}
       propertyPath: _listenOverrides.Array.data[3]
       value: 
-      objectReference: {fileID: 1519797775}
+      objectReference: {fileID: 456380290}
+    - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[0]
+      value: 
+      objectReference: {fileID: 7991107238418929860}
+    - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[1]
+      value: 
+      objectReference: {fileID: 1646326985}
+    - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[2]
+      value: 
+      objectReference: {fileID: 550442194}
+    - target: {fileID: 2253389394178658089, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
+        type: 3}
+      propertyPath: _listenFromGroups.Array.data[3]
+      value: 
+      objectReference: {fileID: 2552279737936396492}
     - target: {fileID: 3731233056229898264, guid: 7e3e8494a7d6e6445a94fa32f914e47a,
         type: 3}
       propertyPath: m_LocalPosition.x

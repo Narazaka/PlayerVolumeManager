@@ -112,6 +112,13 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         void DetectGroups()
         {
             var foundGroups = FindObjectsByType<PlayerVolumeGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = _groups.arraySize - 1; i >= 0; i--)
+            {
+                if (_groups.GetArrayElementAtIndex(i).objectReferenceValue == null)
+                {
+                    _groups.DeleteArrayElementAtIndex(i);
+                }
+            }
             var existingGroups = new HashSet<PlayerVolumeGroup>();
             for (var i = 0; i < _groups.arraySize; i++)
             {
