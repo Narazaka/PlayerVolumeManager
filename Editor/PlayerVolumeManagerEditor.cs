@@ -54,7 +54,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
             foreach (var group in groups)
             {
-                foreach (var prop in PlayerVolumeSettingGUI.FindMissingFallback(group, manager))
+                var pairs = group.GetComponentsInChildren<PlayerVolumeListenPair>(true);
+                var overrides = new List<PlayerVolumeSettingByGroup>(pairs.Length);
+                for (var i = 0; i < pairs.Length; i++) overrides.Add(pairs[i]._setting);
+
+                foreach (var prop in PlayerVolumeSettingGUI.FindMissingFallback(group, overrides, manager))
                 {
                     Add(prop, group.name);
                 }

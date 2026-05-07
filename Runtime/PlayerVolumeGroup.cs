@@ -15,9 +15,8 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         [Tooltip("このグループでオーバーライドされない項目を、Managerではなく次のグループにまかせる")]
         public bool _fallbackToNextGroup;
 
-        [InlinePlayerVolumeSettingByGroup]
-        public PlayerVolumeGroup[] _listenFromGroups = new PlayerVolumeGroup[0];
-        public PlayerVolumeSettingByGroup[] _listenOverrides = new PlayerVolumeSettingByGroup[0];
+        PlayerVolumeGroup[] _listenFromGroups = new PlayerVolumeGroup[0];
+        PlayerVolumeSettingByGroup[] _listenOverrides = new PlayerVolumeSettingByGroup[0];
 
         public virtual bool _ContainsPlayer(VRCPlayerApi player)
         {
@@ -27,6 +26,15 @@ namespace Narazaka.VRChat.PlayerVolumeManager
 
         protected virtual void OnEnable()
         {
+            var pairs = GetComponentsInChildren<PlayerVolumeListenPair>(true);
+            var len = pairs.Length;
+            _listenFromGroups = new PlayerVolumeGroup[len];
+            _listenOverrides = new PlayerVolumeSettingByGroup[len];
+            for (var i = 0; i < len; i++)
+            {
+                _listenFromGroups[i] = pairs[i]._group;
+                _listenOverrides[i] = pairs[i]._setting;
+            }
         }
 
         public bool[] _ApplyVolumesWithOverride(PlayerVolumeSetting parent, VRCPlayerApi player, PlayerVolumeGroup[] fromGroups, bool[] set)

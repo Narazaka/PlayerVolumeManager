@@ -34,22 +34,15 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         const string ModePrefKey = "Narazaka.VRChat.PlayerVolumeManager.InspectorMode";
         const string FilterMaskPrefKey = "Narazaka.VRChat.PlayerVolumeManager.InspectorFilterMask";
+        const string PairSortModePrefKey = "Narazaka.VRChat.PlayerVolumeManager.PairSortMode";
 
         public const string ListenOverridesParentName = "ListenOverrides";
 
-        public static PlayerVolumeSettingByGroup CreateListenOverrideSetting(PlayerVolumeGroup owner, PlayerVolumeGroup fromGroup)
+        public static PlayerVolumeSettingByGroup CreateListenOverrideSetting(PlayerVolumeListenPair owner)
         {
-            var root = owner.transform;
-            var parent = root.Find(ListenOverridesParentName);
-            if (parent == null)
-            {
-                parent = new GameObject(ListenOverridesParentName).transform;
-                parent.SetParent(root, false);
-                Undo.RegisterCreatedObjectUndo(parent.gameObject, "Create Listen Overrides Parent");
-            }
-            var settingName = fromGroup != null ? fromGroup.name : "ListenOverride";
+            var settingName = owner._group != null ? owner._group.name : "ListenOverride";
             var setting = new GameObject(settingName).AddComponent<PlayerVolumeSettingByGroup>();
-            setting.transform.SetParent(parent, false);
+            setting.transform.SetParent(owner.transform, false);
             Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Listen Override Setting");
             return setting;
         }
@@ -135,12 +128,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             };
         }
 
-        public static List<string> FindMissingFallback(PlayerVolumeGroup group, PlayerVolumeSetting manager)
+        public static List<string> FindMissingFallback(PlayerVolumeGroup group, IReadOnlyList<PlayerVolumeSettingByGroup> overrides, PlayerVolumeSetting manager)
         {
             var missing = new List<string>();
             if (group == null) return missing;
-            var overrides = group._listenOverrides;
-            if (overrides == null || overrides.Length == 0) return missing;
+            if (overrides == null || overrides.Count == 0) return missing;
 
             if (group._voiceGain < 0f && (manager == null || manager._voiceGain < 0f) && AnyOverrideFloat(overrides, ov => ov._voiceGain))
                 missing.Add("Player Gain");
@@ -165,19 +157,21 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             return missing;
         }
 
-        static bool AnyOverrideFloat(PlayerVolumeSettingByGroup[] overrides, Func<PlayerVolumeSettingByGroup, float> getter)
+        static bool AnyOverrideFloat(IReadOnlyList<PlayerVolumeSettingByGroup> overrides, Func<PlayerVolumeSettingByGroup, float> getter)
         {
-            foreach (var ov in overrides)
+            for (var i = 0; i < overrides.Count; i++)
             {
+                var ov = overrides[i];
                 if (ov != null && getter(ov) >= 0f) return true;
             }
             return false;
         }
 
-        static bool AnyOverrideBool(PlayerVolumeSettingByGroup[] overrides, Func<PlayerVolumeSettingByGroup, bool> getter)
+        static bool AnyOverrideBool(IReadOnlyList<PlayerVolumeSettingByGroup> overrides, Func<PlayerVolumeSettingByGroup, bool> getter)
         {
-            foreach (var ov in overrides)
+            for (var i = 0; i < overrides.Count; i++)
             {
+                var ov = overrides[i];
                 if (ov != null && getter(ov)) return true;
             }
             return false;
@@ -223,6 +217,11 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         public static void SetMode(DisplayMode value) => EditorPrefs.SetInt(ModePrefKey, (int)value);
         public static FieldFlag GetFilterMask() => (FieldFlag)EditorPrefs.GetInt(FilterMaskPrefKey, (int)FieldFlag.VoiceGain);
         public static void SetFilterMask(FieldFlag value) => EditorPrefs.SetInt(FilterMaskPrefKey, (int)value);
+
+        public static PlayerVolumeListenPairView.SortMode GetPairSortMode()
+            => (PlayerVolumeListenPairView.SortMode)EditorPrefs.GetInt(PairSortModePrefKey, 0);
+        public static void SetPairSortMode(PlayerVolumeListenPairView.SortMode value)
+            => EditorPrefs.SetInt(PairSortModePrefKey, (int)value);
 
         public sealed class Properties
         {
