@@ -46,21 +46,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void SyncOverrideArrays()
         {
-            // Drop entries whose group reference became null.
-            for (var i = _listenFromGroups.arraySize - 1; i >= 0; i--)
-            {
-                if (_listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue == null)
-                {
-                    _listenFromGroups.DeleteArrayElementAtIndex(i);
-                    if (i < _listenOverrides.arraySize)
-                    {
-                        // Clear before delete so the underlying setting object is not destroyed by Unity.
-                        _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
-                        _listenOverrides.DeleteArrayElementAtIndex(i);
-                    }
-                }
-            }
-
             // Keep _listenOverrides aligned with _listenFromGroups in size.
             while (_listenOverrides.arraySize < _listenFromGroups.arraySize)
             {
