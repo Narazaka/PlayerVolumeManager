@@ -159,6 +159,20 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         void FillOverrides()
         {
+            // Drop entries whose group reference is null (cleanup pass moved here from SyncOverrideArrays).
+            for (var i = _listenFromGroups.arraySize - 1; i >= 0; i--)
+            {
+                if (_listenFromGroups.GetArrayElementAtIndex(i).objectReferenceValue == null)
+                {
+                    _listenFromGroups.DeleteArrayElementAtIndex(i);
+                    if (i < _listenOverrides.arraySize)
+                    {
+                        _listenOverrides.GetArrayElementAtIndex(i).objectReferenceValue = null;
+                        _listenOverrides.DeleteArrayElementAtIndex(i);
+                    }
+                }
+            }
+
             var ownerGroup = target as PlayerVolumeGroup;
 
             // Pick up existing settings under ListenOverrides parent (by GameObject name).
