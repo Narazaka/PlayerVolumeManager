@@ -31,7 +31,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         static readonly Dictionary<int, SettingEntry> _settingCache = new Dictionary<int, SettingEntry>();
 
-        static SettingEntry GetSettingEntry(PlayerVolumeSettingByGroup setting)
+        static SettingEntry GetSettingEntry(PlayerVolumeOverrideSetting setting)
         {
             var id = setting.GetInstanceID();
             if (_settingCache.TryGetValue(id, out var entry) &&
@@ -84,7 +84,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 groupProperties.Fallback = PlayerVolumeSettingGUI.GetManagerFallbackProperties();
             }
 
-            var setting = settingProp.objectReferenceValue as PlayerVolumeSettingByGroup;
+            var setting = settingProp.objectReferenceValue as PlayerVolumeOverrideSetting;
             using (new EditorGUI.IndentLevelScope())
             {
                 if (setting == null)

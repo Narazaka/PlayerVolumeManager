@@ -881,7 +881,7 @@ MonoBehaviour:
       Data: 42|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeSettingByGroup[], Narazaka.VRChat.PlayerVolumeManager
+      Data: Narazaka.VRChat.PlayerVolumeManager.PlayerVolumeOverrideSetting[], Narazaka.VRChat.PlayerVolumeManager
     - Name: 
       Entry: 8
       Data: 

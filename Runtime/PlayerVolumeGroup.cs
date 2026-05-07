@@ -16,7 +16,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
         public bool _fallbackToNextGroup;
 
         PlayerVolumeGroup[] _listenFromGroups = new PlayerVolumeGroup[0];
-        PlayerVolumeSettingByGroup[] _listenOverrides = new PlayerVolumeSettingByGroup[0];
+        PlayerVolumeOverrideSetting[] _listenOverrides = new PlayerVolumeOverrideSetting[0];
 
         public virtual bool _ContainsPlayer(VRCPlayerApi player)
         {
@@ -29,7 +29,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager
             var pairs = GetComponentsInChildren<PlayerVolumeListenPair>(true);
             var len = pairs.Length;
             _listenFromGroups = new PlayerVolumeGroup[len];
-            _listenOverrides = new PlayerVolumeSettingByGroup[len];
+            _listenOverrides = new PlayerVolumeOverrideSetting[len];
             for (var i = 0; i < len; i++)
             {
                 _listenFromGroups[i] = pairs[i]._group;

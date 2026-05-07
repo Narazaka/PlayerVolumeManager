@@ -10,6 +10,6 @@ namespace Narazaka.VRChat.PlayerVolumeManager
     public class PlayerVolumeListenPair : UdonSharpBehaviour
     {
         public PlayerVolumeGroup _group;
-        public PlayerVolumeSettingByGroup _setting;
+        public PlayerVolumeOverrideSetting _setting;
     }
 }

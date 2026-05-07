@@ -276,7 +276,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
         {
             var owner = (PlayerVolumeGroup)target;
             var pairs = owner.GetComponentsInChildren<PlayerVolumeListenPair>(true);
-            var overrides = new List<PlayerVolumeSettingByGroup>(pairs.Length);
+            var overrides = new List<PlayerVolumeOverrideSetting>(pairs.Length);
             for (var i = 0; i < pairs.Length; i++) overrides.Add(pairs[i]._setting);
 
             var missing = PlayerVolumeSettingGUI.FindMissingFallback(owner, overrides, PlayerVolumeSettingGUI.GetManager());

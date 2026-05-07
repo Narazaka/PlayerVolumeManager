@@ -5,9 +5,9 @@ using VRC.Udon;
 
 namespace Narazaka.VRChat.PlayerVolumeManager
 {
-    [AddComponentMenu("PlayerVolumeManager/Group Setting/Player Volume Setting By Group")]
+    [AddComponentMenu("PlayerVolumeManager/Group Setting/Player Volume Override Setting")]
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class PlayerVolumeSettingByGroup : PlayerVolumeSetting
+    public class PlayerVolumeOverrideSetting : PlayerVolumeSetting
     {
     }
 }

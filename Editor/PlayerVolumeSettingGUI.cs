@@ -38,10 +38,10 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
 
         public const string ListenOverridesParentName = "ListenOverrides";
 
-        public static PlayerVolumeSettingByGroup CreateListenOverrideSetting(PlayerVolumeListenPair owner)
+        public static PlayerVolumeOverrideSetting CreateListenOverrideSetting(PlayerVolumeListenPair owner)
         {
             var settingName = owner._group != null ? owner._group.name : "ListenOverride";
-            var setting = new GameObject(settingName).AddComponent<PlayerVolumeSettingByGroup>();
+            var setting = new GameObject(settingName).AddComponent<PlayerVolumeOverrideSetting>();
             setting.transform.SetParent(owner.transform, false);
             Undo.RegisterCreatedObjectUndo(setting.gameObject, "Create Listen Override Setting");
             return setting;
@@ -128,7 +128,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             };
         }
 
-        public static List<string> FindMissingFallback(PlayerVolumeGroup group, IReadOnlyList<PlayerVolumeSettingByGroup> overrides, PlayerVolumeSetting manager)
+        public static List<string> FindMissingFallback(PlayerVolumeGroup group, IReadOnlyList<PlayerVolumeOverrideSetting> overrides, PlayerVolumeSetting manager)
         {
             var missing = new List<string>();
             if (group == null) return missing;
@@ -157,7 +157,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             return missing;
         }
 
-        static bool AnyOverrideFloat(IReadOnlyList<PlayerVolumeSettingByGroup> overrides, Func<PlayerVolumeSettingByGroup, float> getter)
+        static bool AnyOverrideFloat(IReadOnlyList<PlayerVolumeOverrideSetting> overrides, Func<PlayerVolumeOverrideSetting, float> getter)
         {
             for (var i = 0; i < overrides.Count; i++)
             {
@@ -167,7 +167,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             return false;
         }
 
-        static bool AnyOverrideBool(IReadOnlyList<PlayerVolumeSettingByGroup> overrides, Func<PlayerVolumeSettingByGroup, bool> getter)
+        static bool AnyOverrideBool(IReadOnlyList<PlayerVolumeOverrideSetting> overrides, Func<PlayerVolumeOverrideSetting, bool> getter)
         {
             for (var i = 0; i < overrides.Count; i++)
             {
