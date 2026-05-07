@@ -59,7 +59,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 return EditorGUI.GetPropertyHeight(property, label, true);
             }
             var line = EditorGUIUtility.singleLineHeight;
-            if (!property.isExpanded || property.objectReferenceValue == null) return line;
+            if (!property.isExpanded) return line;
             var spacing = EditorGUIUtility.standardVerticalSpacing;
             // header line + setting line + body
             return line + spacing + line + spacing + PlayerVolumeSettingGUI.GetHeight();
@@ -85,20 +85,16 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
                 objectRect.xMin = headerRect.x + EditorGUIUtility.labelWidth;
 
                 var fromGroup = property.objectReferenceValue as PlayerVolumeGroup;
-                if (fromGroup != null)
+
                 {
                     var expanded = property.isExpanded;
                     var newExpanded = EditorGUI.Foldout(foldoutRect, expanded, FoldoutLabel(fromGroup, property, label), true);
                     if (newExpanded != expanded) property.isExpanded = newExpanded;
                 }
-                else
-                {
-                    EditorGUI.LabelField(foldoutRect, label);
-                }
 
                 EditorGUI.ObjectField(objectRect, property, typeof(PlayerVolumeGroup), GUIContent.none);
 
-                if (fromGroup == null || !property.isExpanded) return;
+                if (!property.isExpanded) return;
 
                 var index = ExtractArrayIndex(property.propertyPath);
                 if (index < 0) return;
