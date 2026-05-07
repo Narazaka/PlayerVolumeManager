@@ -366,7 +366,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             so.FindProperty(valueName).boolValue = fallback ?? defaultValue;
         }
 
-        static readonly GUIContent ModeLabel = new GUIContent("(Listen Setting Filter)");
+        static readonly GUIContent ModeLabel = new GUIContent("(Filter)");
 
         public static void DrawModeDropdownLayout()
         {

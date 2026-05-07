@@ -54,7 +54,7 @@ namespace Narazaka.VRChat.PlayerVolumeManager.Editor
             EditorGUILayout.PropertyField(_fallbackToNextGroup);
         }
 
-        static readonly GUIContent SortModeLabel = new GUIContent("Listen Sort");
+        static readonly GUIContent SortModeLabel = new GUIContent("(Sort)");
         void DrawSortModeToggle()
         {
             using (new EditorGUILayout.HorizontalScope())
